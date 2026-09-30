@@ -62,7 +62,7 @@ class _CartellinoWebViewState extends State<CartellinoWebView> {
   bool _isLoading = true;
 
   static const String _appUrl =
-      'https://stefanomilan1911.github.io/Calcula/Calcula.html';
+      'https://github.com/StefanoMilan1911/ADTurnistica.git';
 
   @override
   void initState() {
