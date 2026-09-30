@@ -1015,46 +1015,24 @@ body.dark{
 </div>
 
 <script type="module">
-// ============ CONFIGURAZIONE FIREBASE ============
-// Incolla qui i dati del tuo progetto Firebase (Impostazioni progetto -> Le tue app -> Web).
-// Finche' apiKey resta "INCOLLA_QUI", la parte online resta spenta e l'app funziona in locale.
-const firebaseConfig = {
-  apiKey: "AIzaSyCPKNvtnM1nCPxLPyfzBUqaz6gqsc9THkU",
-  authDomain: "demoonline-7c881.firebaseapp.com",
-  projectId: "demoonline-7c881",
-  storageBucket: "demoonline-7c881.firebasestorage.app",
-  messagingSenderId: "1053541344307",
-  appId: "1:1053541344307:web:6d44b0db8393e5a0ef6f46"
-};
-// ================================================
+// ============ CONFIGURAZIONE SUPABASE ============
+// Supabase -> il tuo progetto -> Settings -> API
+// Finche' SUPABASE_URL resta "INCOLLA_QUI", la parte online resta spenta
+// e l'app funziona normalmente in locale.
+const SUPABASE_URL = "INCOLLA_QUI";
+const SUPABASE_ANON_KEY = "INCOLLA_QUI";
+// =================================================
 
-window.FB = { enabled: false };
-window.FB_READY = (async ()=>{
-  if(!firebaseConfig.apiKey || firebaseConfig.apiKey === "INCOLLA_QUI") return;
+window.SB = { enabled: false };
+window.SB_READY = (async ()=>{
+  if(!SUPABASE_URL || SUPABASE_URL === "INCOLLA_QUI") return;
   try{
-    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
-    const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-            signOut, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-    const { getFirestore, collection, doc, addDoc, getDoc, setDoc, updateDoc,
-            deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp }
-            = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    window.FB = {
-      enabled: true, auth, db,
-      signIn: (e,p)=>signInWithEmailAndPassword(auth,e,p),
-      signUp: (e,p)=>createUserWithEmailAndPassword(auth,e,p),
-      signOut: ()=>signOut(auth),
-      onAuth: (cb)=>onAuthStateChanged(auth, cb),
-      collection, doc, addDoc, getDoc, setDoc, updateDoc, deleteDoc,
-      query, where, orderBy, onSnapshot, serverTimestamp
-    };
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.SB = { enabled: true, client };
   }catch(e){
-    console.error('Firebase non disponibile', e);
-    window.FB = { enabled:false };
+    console.error('Supabase non disponibile', e);
+    window.SB = { enabled:false };
   }
 })();
 </script>
@@ -2027,29 +2005,31 @@ window.onLoginSubmit = async function(e){
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPassword').value;
   if(!email || !pass) return;
+  const errBox = document.getElementById('loginError');
 
-  if(window.FB && window.FB.enabled){
-    const errBox = document.getElementById('loginError');
-    try{
-      await window.FB.signIn(email, pass);
-    }catch(err){
-      // se l'utente non esiste, prova a registrarlo
-      try{
-        await window.FB.signUp(email, pass);
-      }catch(err2){
-        // mostra sempre il motivo reale, cosi' i problemi si vedono
-        if(errBox){
-          errBox.innerHTML = `Accesso online non riuscito.<br><small>${err2.code || ''} ${err2.message || ''}</small>`;
-        }
+  if(window.SB && window.SB.enabled){
+    const sb = window.SB.client;
+    let { data, error } = await sb.auth.signInWithPassword({email, password: pass});
+    if(error){
+      // account non esistente: prova a registrarlo
+      const res = await sb.auth.signUp({email, password: pass});
+      if(res.error){
+        if(errBox) errBox.innerHTML = `Accesso non riuscito.<br><small>${res.error.message}</small>`;
         return;
       }
+      if(!res.data.session){
+        if(errBox) errBox.innerHTML = 'Account creato. Controlla la mail per confermare, poi rientra.';
+        return;
+      }
+      data = res.data;
     }
-    authUser = {email, uid: window.FB.auth.currentUser?.uid || null};
+    authUser = {email, uid: data.user.id};
   } else {
     authUser = {email};
   }
   try{ localStorage.setItem(STORAGE_AUTH_KEY, JSON.stringify(authUser)); }catch(err){}
   loadGroup();
+  await syncProfile();
   render();
   startRequestsListener();
 };
@@ -2063,8 +2043,8 @@ window.localOnlyLogin = function(){
 
 window.logout = async function(){
   stopRequestsListener();
-  if(window.FB && window.FB.enabled){
-    try{ await window.FB.signOut(); }catch(e){}
+  if(window.SB && window.SB.enabled){
+    try{ await window.SB.client.auth.signOut(); }catch(e){}
   }
   authUser = null;
   try{ localStorage.removeItem(STORAGE_AUTH_KEY); }catch(err){}
@@ -2564,28 +2544,55 @@ function saveGroup(){
 }
 
 function onlineReady(){
-  return window.FB && window.FB.enabled && authUser && authUser.uid && groupCode;
+  return window.SB && window.SB.enabled && authUser && authUser.uid && groupCode;
+}
+
+// Tiene allineata la riga del profilo su Supabase: serve alle regole di
+// sicurezza per sapere a quale gruppo appartiene l'utente.
+async function syncProfile(){
+  if(!(window.SB && window.SB.enabled) || !authUser || !authUser.uid) return;
+  try{
+    await window.SB.client.from('profiles').upsert({
+      id: authUser.uid,
+      display_name: displayName || authUser.email,
+      group_code: groupCode
+    });
+  }catch(e){ console.error('Profilo non aggiornato', e); }
 }
 
 function stopRequestsListener(){
-  if(requestsUnsub){ try{ requestsUnsub(); }catch(e){} requestsUnsub = null; }
+  if(requestsUnsub){
+    try{ window.SB.client.removeChannel(requestsUnsub); }catch(e){}
+    requestsUnsub = null;
+  }
   openRequests = [];
+}
+
+async function fetchRequests(){
+  if(!onlineReady()) return;
+  try{
+    const { data, error } = await window.SB.client
+      .from('swap_requests')
+      .select('*')
+      .eq('group_code', groupCode)
+      .order('date', {ascending:true});
+    if(error){ console.error(error); return; }
+    openRequests = data || [];
+    if(activePanel === 'swap') renderPanelBody();
+  }catch(e){ console.error(e); }
 }
 
 function startRequestsListener(){
   stopRequestsListener();
   if(!onlineReady()) return;
-  const FB = window.FB;
+  fetchRequests();
   try{
-    const q = FB.query(
-      FB.collection(FB.db, 'groups', groupCode, 'requests'),
-      FB.orderBy('date')
-    );
-    requestsUnsub = FB.onSnapshot(q, (snap)=>{
-      openRequests = [];
-      snap.forEach(d=>openRequests.push({id:d.id, ...d.data()}));
-      if(activePanel === 'swap') renderPanelBody();
-    }, (err)=>console.error('Ascolto richieste non riuscito', err));
+    requestsUnsub = window.SB.client
+      .channel('swap-' + groupCode)
+      .on('postgres_changes',
+          {event:'*', schema:'public', table:'swap_requests', filter:`group_code=eq.${groupCode}`},
+          ()=>fetchRequests())
+      .subscribe();
   }catch(e){ console.error(e); }
 }
 
@@ -2597,15 +2604,17 @@ window.joinGroup = async function(){
   groupCode = code.trim().toLowerCase();
   displayName = name.trim();
   saveGroup();
+  await syncProfile();
   startRequestsListener();
   renderPanelBody();
 };
 
-window.leaveGroup = function(){
+window.leaveGroup = async function(){
   if(!confirm('Uscire dal gruppo? Le tue richieste gia inviate restano visibili ai colleghi.')) return;
   stopRequestsListener();
   groupCode = null;
   saveGroup();
+  await syncProfile();
   renderPanelBody();
 };
 
@@ -2618,20 +2627,19 @@ window.createSwapRequest = async function(){
   if(!shift){ alert('Indica quale turno (es. P, M, N).'); return; }
   onlineBusy = true; renderPanelBody();
   try{
-    const FB = window.FB;
-    await FB.addDoc(FB.collection(FB.db, 'groups', groupCode, 'requests'), {
-      fromUid: authUser.uid,
-      fromName: displayName,
+    const { error } = await window.SB.client.from('swap_requests').insert({
+      group_code: groupCode,
+      from_uid: authUser.uid,
+      from_name: displayName,
       date: dateStr,
-      shiftCode: shift.toUpperCase(),
+      shift_code: shift.toUpperCase(),
       note: note || '',
-      status: 'open',
-      takenBy: null,
-      takenByName: null,
-      createdAt: FB.serverTimestamp()
+      status: 'open'
     });
+    if(error) alert('Invio non riuscito: ' + error.message);
   }catch(e){ alert('Invio non riuscito: ' + e.message); }
   onlineBusy = false;
+  await fetchRequests();
   renderPanelBody();
 };
 
@@ -2640,14 +2648,15 @@ window.acceptSwapRequest = async function(id){
   if(!confirm('Confermi di prenderti questo turno?')) return;
   onlineBusy = true; renderPanelBody();
   try{
-    const FB = window.FB;
-    await FB.updateDoc(FB.doc(FB.db, 'groups', groupCode, 'requests', id), {
-      status: 'taken',
-      takenBy: authUser.uid,
-      takenByName: displayName
-    });
+    const { error } = await window.SB.client
+      .from('swap_requests')
+      .update({status:'taken', taken_by: authUser.uid, taken_by_name: displayName})
+      .eq('id', id)
+      .eq('status', 'open');           // non si puo' prendere due volte
+    if(error) alert('Operazione non riuscita: ' + error.message);
   }catch(e){ alert('Operazione non riuscita: ' + e.message); }
   onlineBusy = false;
+  await fetchRequests();
   renderPanelBody();
 };
 
@@ -2655,9 +2664,10 @@ window.cancelSwapRequest = async function(id){
   if(!onlineReady()) return;
   if(!confirm('Eliminare questa richiesta?')) return;
   try{
-    const FB = window.FB;
-    await FB.deleteDoc(FB.doc(FB.db, 'groups', groupCode, 'requests', id));
+    const { error } = await window.SB.client.from('swap_requests').delete().eq('id', id);
+    if(error) alert('Eliminazione non riuscita: ' + error.message);
   }catch(e){ alert('Eliminazione non riuscita: ' + e.message); }
+  await fetchRequests();
   renderPanelBody();
 };
 
@@ -2669,12 +2679,12 @@ function fmtDateIt(iso){
 }
 
 function renderSwapPanel(){
-  if(!window.FB || !window.FB.enabled){
+  if(!window.SB || !window.SB.enabled){
     return `
       <h2>Scambio turni</h2>
       <p style="font-size:0.85rem; color:var(--ink-soft);">
-        La parte online non e' ancora configurata. Serve un progetto Firebase gratuito:
-        una volta creato, incolla i dati nella sezione in cima al file dell'app.
+        La parte online non e' ancora configurata. Serve un progetto Supabase gratuito:
+        una volta creato, incolla URL e chiave anon nella sezione in cima al file dell'app.
       </p>`;
   }
   if(!authUser || !authUser.uid){
@@ -2694,19 +2704,19 @@ function renderSwapPanel(){
       <button class="btn-primary" onclick="joinGroup()">Entra in un gruppo</button>`;
   }
 
-  const mine = openRequests.filter(r=>r.fromUid === authUser.uid);
-  const others = openRequests.filter(r=>r.fromUid !== authUser.uid);
+  const mine = openRequests.filter(r=>r.from_uid === authUser.uid);
+  const others = openRequests.filter(r=>r.from_uid !== authUser.uid);
 
   const card = (r, isMine)=>`
     <div class="swap-card ${r.status==='taken'?'taken':''}">
       <div class="swap-card-head">
-        <span class="swap-shift">${r.shiftCode}</span>
+        <span class="swap-shift">${r.shift_code}</span>
         <span class="swap-date">${fmtDateIt(r.date)}</span>
       </div>
-      <div class="swap-meta">${isMine?'la tua richiesta':'da '+(r.fromName||'collega')}</div>
+      <div class="swap-meta">${isMine?'la tua richiesta':'da '+(r.from_name||'collega')}</div>
       ${r.note?`<div class="swap-note">"${r.note}"</div>`:''}
       ${r.status==='taken'
-        ? `<div class="swap-status">✅ preso da ${r.takenByName||'un collega'}</div>`
+        ? `<div class="swap-status">✅ preso da ${r.taken_by_name||'un collega'}</div>`
         : (isMine
             ? `<button class="mini-btn danger" onclick="cancelSwapRequest('${r.id}')">annulla richiesta</button>`
             : `<button class="btn-primary" style="padding:6px 14px; font-size:0.8rem;" onclick="acceptSwapRequest('${r.id}')">Lo prendo io</button>`)}
@@ -2747,22 +2757,29 @@ function renderSwapPanel(){
   loadStructures();
   loadCustomColors();
   loadGroup();
-  if(window.FB_READY) { try{ await window.FB_READY; }catch(e){} }
+  if(window.SB_READY) { try{ await window.SB_READY; }catch(e){} }
   await loadSettings();
   await loadMonth(viewY, viewM);
 
-  // se Firebase e' attivo, allinea lo stato all'utente realmente autenticato
-  if(window.FB && window.FB.enabled){
-    window.FB.onAuth((u)=>{
-      if(u){
-        // account online presente: abilita anche lo scambio turni
-        authUser = {email:u.email, uid:u.uid};
+  // se Supabase e' attivo, allinea lo stato alla sessione realmente aperta
+  if(window.SB && window.SB.enabled){
+    try{
+      const { data } = await window.SB.client.auth.getSession();
+      if(data && data.session){
+        authUser = {email: data.session.user.email, uid: data.session.user.id};
+        try{ localStorage.setItem(STORAGE_AUTH_KEY, JSON.stringify(authUser)); }catch(e){}
+      } else if(authUser){
+        // nessuna sessione online: si resta dentro in locale, senza scambi
+        authUser = {email: authUser.email};
+      }
+    }catch(e){}
+
+    window.SB.client.auth.onAuthStateChange((event, session)=>{
+      if(session){
+        authUser = {email: session.user.email, uid: session.user.id};
         try{ localStorage.setItem(STORAGE_AUTH_KEY, JSON.stringify(authUser)); }catch(e){}
         startRequestsListener();
       } else {
-        // nessun account online: NON si esce dall'app.
-        // Chi usa l'app solo in locale continua a entrare come prima,
-        // semplicemente senza la parte di scambio turni.
         if(authUser) authUser = {email: authUser.email};
         stopRequestsListener();
       }
