@@ -1019,8 +1019,8 @@ body.dark{
 // Supabase -> il tuo progetto -> Settings -> API
 // Finche' SUPABASE_URL resta "INCOLLA_QUI", la parte online resta spenta
 // e l'app funziona normalmente in locale.
-const SUPABASE_URL = "https://igadnxzdfaecjgpoyixb.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnYWRueHpkZmFlY2pncG95aXhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3ODQzNTYsImV4cCI6MjEwNjM2MDM1Nn0.57qoaKTCWL6FTdcEOHPkk4sZGHu5mjgyBCIFrt4y9Vg";
+const SUPABASE_URL = "INCOLLA_QUI";
+const SUPABASE_ANON_KEY = "INCOLLA_QUI";
 // =================================================
 
 window.SB = { enabled: false };
@@ -2785,6 +2785,13 @@ function renderSwapPanel(){
       }
       render();
     });
+  }
+
+  // riallinea il profilo online (gruppo e nome) a ogni avvio:
+  // se manca o non combacia, le regole del database non restituirebbero
+  // nessuna richiesta pur essendoci.
+  if(window.SB && window.SB.enabled && authUser && authUser.uid && groupCode){
+    await syncProfile();
   }
 
   render();
