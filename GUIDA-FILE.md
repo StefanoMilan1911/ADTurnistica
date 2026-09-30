@@ -4,7 +4,7 @@
 
 **File:** `turni_lavoro.html`
 **Dove va:** nel repository GitHub, rinominato **`Calcula.html`**
-**Link pubblico:** https://stefanomilan1911.github.io/Calcula/Calcula.html
+**Link pubblico:** https://github.com/StefanoMilan1911/ADTurnistica.git
 
 Contiene TUTTO: calendario, turni, reparti, strutture, guadagni,
 statistiche, ferie, backup, login e scambio turni.
@@ -29,7 +29,7 @@ const firebaseConfig = {
 
 ## 2. L'app Android (il "guscio")
 
-Progetto Flutter: `.../Phone_projects/Calcula/calcula/`
+Progetto Flutter: `.../Phone_projects/ADTurnistica/calcula/`
 
 ### `lib/main.dart`
 Il codice dell'app. Fa tre cose:
@@ -107,7 +107,7 @@ Per rigenerare le icone: `dart run flutter_launcher_icons`
 
 ```bash
 # stare sempre nella cartella del progetto (quella con pubspec.yaml)
-cd .../Calcula/calcula
+cd .../ADTurnistica/calcula
 
 flutter pub get              # installa i pacchetti
 flutter analyze              # controlla errori nel codice
