@@ -1,0 +1,2778 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1C2B39">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231C2B39'/%3E%3Ctext x='50' y='64' font-size='48' text-anchor='middle' fill='%23D98E3D' font-family='sans-serif'%3E%E2%8F%B1%3C/text%3E%3C/svg%3E">
+<title>Cartellino — Gestione Turni</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#1C2B39;
+  --ink-soft:#5C6B72;
+  --paper:#EEF1EF;
+  --paper-raised:#FFFFFF;
+  --line:#CBD3CF;
+  --amber:#D98E3D;
+  --amber-soft:#F3DBB6;
+  --teal:#3E7C6B;
+  --teal-soft:#CFE3DC;
+  --rust:#B85450;
+  --rust-soft:#EBD1CF;
+  --radius:10px;
+  font-size:16px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'IBM Plex Sans', system-ui, sans-serif;
+  min-height:100vh;
+  padding:24px 16px 64px;
+}
+.app{
+  max-width:760px;
+  margin:0 auto;
+}
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+  flex-wrap:wrap;
+}
+.brand{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+}
+.brand h1{
+  font-family:'Space Grotesk', sans-serif;
+  font-size:1.5rem;
+  font-weight:700;
+  margin:0;
+  letter-spacing:-0.01em;
+}
+.brand .tag{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.72rem;
+  color:var(--ink-soft);
+  background:var(--paper-raised);
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:2px 10px;
+}
+.month-nav{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:var(--paper-raised);
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:6px 8px;
+}
+.month-nav button{
+  width:32px;height:32px;
+  border-radius:50%;
+  border:none;
+  background:transparent;
+  color:var(--ink);
+  font-size:1.1rem;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.month-nav button:hover{background:var(--paper);}
+.month-nav .label{
+  font-family:'Space Grotesk', sans-serif;
+  font-weight:600;
+  min-width:150px;
+  text-align:center;
+  text-transform:capitalize;
+}
+.icon-btn{
+  border:1px solid var(--line);
+  background:var(--paper-raised);
+  border-radius:10px;
+  padding:9px 10px;
+  cursor:pointer;
+  font-family:'IBM Plex Sans', sans-serif;
+  font-weight:500;
+  font-size:0.82rem;
+  color:var(--ink);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.icon-btn:hover{border-color:var(--ink-soft);}
+
+.panel-buttons{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-bottom:16px;
+}
+
+/* legend */
+.legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:10px;
+}
+.chip{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.72rem;
+  font-weight:600;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid transparent;
+  white-space:nowrap;
+}
+.calendar-note{
+  font-size:0.72rem;
+  color:var(--ink-soft);
+  margin:0 0 14px 2px;
+  display:flex;
+  align-items:center;
+}
+.calendar-note .holiday-dot{margin-left:0; margin-right:6px;}
+
+/* calendar */
+.calendar-card{
+  background:var(--paper-raised);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px;
+}
+.calendar-card-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.month-nav-inline{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.month-nav-inline button{
+  width:30px;height:30px;
+  border-radius:50%;
+  border:1px solid var(--line);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:1.05rem;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.month-nav-inline button:hover{border-color:var(--ink-soft);}
+.month-nav-inline .calendar-card-title{
+  min-width:126px;
+  text-align:center;
+  font-size:0.95rem;
+  color:var(--ink);
+}
+.calendar-card-title{
+  font-family:'Space Grotesk', sans-serif;
+  font-weight:600;
+  font-size:0.9rem;
+  color:var(--ink-soft);
+  text-transform:capitalize;
+}
+.edit-toggle{
+  border:1px solid var(--line);
+  background:var(--paper);
+  border-radius:999px;
+  padding:6px 12px;
+  font-size:0.75rem;
+  font-family:'IBM Plex Sans', sans-serif;
+  cursor:pointer;
+  color:var(--ink-soft);
+  white-space:nowrap;
+}
+.edit-toggle.active{
+  background:var(--amber-soft);
+  border-color:var(--amber);
+  color:var(--ink);
+  font-weight:600;
+}
+.weekdays{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:6px;
+  margin-bottom:6px;
+}
+.weekdays span{
+  text-align:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.76rem;
+  color:var(--ink-soft);
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+}
+.days{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:5px;
+}
+.day{
+  min-height:100px;
+  border-radius:8px;
+  border:1px solid var(--line);
+  background:var(--paper);
+  padding:4px;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.day.empty{border:none;background:transparent;min-height:0;}
+.day .num{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.78rem;
+  color:var(--ink-soft);
+}
+.day.today .num{color:var(--amber); font-weight:700;}
+.day-shifts-fill{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  border-radius:5px;
+  overflow:hidden;
+  min-height:34px;
+}
+.shift-block{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:700;
+  font-size:0.78rem;
+  text-transform:uppercase;
+  text-align:center;
+  cursor:pointer;
+  letter-spacing:0.01em;
+  white-space:nowrap;
+  overflow:hidden;
+  padding:0 1px;
+}
+.day-shifts-fill.readonly .shift-block{cursor:default;}
+.shift-block:not(:last-child){
+  border-bottom:1px solid rgba(255,255,255,0.4);
+}
+.add-shift{
+  width:100%;
+  border:1px dashed var(--line);
+  background:transparent;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.68rem;
+  color:var(--ink-soft);
+  border-radius:5px;
+  padding:2px 2px;
+  cursor:pointer;
+}
+.add-shift:focus{outline:2px solid var(--amber); outline-offset:1px;}
+.holiday-dot{
+  display:inline-block;
+  width:5px;height:5px;
+  border-radius:50%;
+  background:var(--amber);
+  margin-left:3px;
+  vertical-align:middle;
+}
+
+@media (max-width:480px){
+  body{padding:20px 8px 56px;}
+  .days{gap:4px;}
+  .day{padding:3px; min-height:92px;}
+  .day .num{font-size:0.7rem;}
+  .panel-buttons{gap:6px;}
+  .icon-btn{font-size:0.72rem; padding:8px 4px;}
+}
+
+/* overlay / panel */
+.overlay{
+  position:fixed; inset:0;
+  background:rgba(28,43,57,0.45);
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:40px 16px;
+  z-index:50;
+  overflow-y:auto;
+}
+.panel{
+  max-width:100%;
+  overflow-x:hidden;
+  background:var(--paper-raised);
+  border-radius:14px;
+  max-width:560px;
+  width:100%;
+  padding:24px;
+  border:1px solid var(--line);
+}
+.panel h2{
+  font-family:'Space Grotesk', sans-serif;
+  margin-top:0;
+  font-size:1.15rem;
+}
+.panel .close{
+  float:right;
+  border:none;
+  background:transparent;
+  font-size:1.3rem;
+  cursor:pointer;
+  color:var(--ink-soft);
+}
+.section-label{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.72rem;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--ink-soft);
+  margin:20px 0 10px;
+}
+.pay-row{
+  display:flex;
+  gap:12px;
+  margin-bottom:10px;
+  flex-wrap:wrap;
+}
+.pay-row label{
+  flex:1 1 140px;
+  min-width:0;          /* permette al campo di restringersi invece di sfondare */
+  font-size:0.8rem;
+  color:var(--ink-soft);
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.pay-row input{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:8px 10px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.9rem;
+}
+.pay-row input[type=date]{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+}
+.type-row{
+  display:grid;
+  grid-template-columns:28px 60px 1fr 70px 24px;
+  gap:8px;
+  align-items:center;
+  margin-bottom:8px;
+}
+.type-row input[type=color]{
+  width:28px;height:28px;padding:0;border:none;border-radius:6px;cursor:pointer;background:none;
+}
+.type-row input[type=text],.type-row input[type=number]{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:6px 8px;
+  font-size:0.85rem;
+  font-family:'IBM Plex Sans', sans-serif;
+  width:100%;
+}
+.type-row .del{
+  border:none;background:transparent;color:var(--rust);cursor:pointer;font-size:1rem;
+}
+.add-type{
+  border:1px dashed var(--line);
+  background:transparent;
+  border-radius:8px;
+  padding:8px;
+  width:100%;
+  cursor:pointer;
+  color:var(--ink-soft);
+  font-size:0.82rem;
+  margin-top:4px;
+}
+.panel-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:22px;
+}
+.btn-primary{
+  background:var(--ink);
+  color:var(--paper);
+  border:none;
+  border-radius:8px;
+  padding:9px 18px;
+  cursor:pointer;
+  font-weight:500;
+  font-family:'IBM Plex Sans', sans-serif;
+}
+
+/* stats / earnings rows */
+.special-row{
+  display:flex;
+  justify-content:space-between;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.85rem;
+  padding:5px 0;
+}
+.special-row-sep{
+  border-top:1px dashed var(--line);
+  margin-top:6px;
+  padding-top:10px;
+}
+.special-group-label{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.66rem;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--amber);
+}
+.net-input-light{
+  width:100%;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:1.1rem;
+  font-weight:600;
+  color:var(--ink);
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:8px 10px;
+}
+
+/* multiplier blocks (Guadagni) */
+.mult-block{
+  margin-bottom:18px;
+  padding-bottom:14px;
+  border-bottom:1px dashed var(--line);
+}
+.mult-block:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
+.mult-header{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:none;
+  border:none;
+  padding:0;
+  cursor:pointer;
+  text-align:left;
+  font-family:inherit;
+}
+.mult-title{
+  font-family:'Space Grotesk', sans-serif;
+  font-weight:700;
+  font-size:1.02rem;
+  color:var(--ink);
+  margin:0;
+}
+.mult-header-right{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.85rem;
+  color:var(--ink);
+  white-space:nowrap;
+}
+.chevron{color:var(--ink-soft); font-size:0.68rem;}
+.mult-body{margin-top:10px;}
+.mult-row{
+  display:flex;
+  gap:8px;
+  margin:6px 0 6px;
+}
+.mult-input{
+  flex:1;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:7px 9px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.85rem;
+}
+.mult-suggestions-inline{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;}
+.mult-chip{
+  border:1px solid var(--line);
+  background:var(--paper);
+  border-radius:6px;
+  padding:4px 7px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.68rem;
+  cursor:pointer;
+  color:var(--ink-soft);
+}
+.mult-chip:hover{border-color:var(--amber); color:var(--amber);}
+.suggestions-toggle{
+  border:1px solid var(--line);
+  background:var(--paper);
+  border-radius:6px;
+  padding:4px 9px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.7rem;
+  color:var(--ink-soft);
+  cursor:pointer;
+  margin-bottom:6px;
+}
+.suggestions-list{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin-bottom:10px;
+}
+.suggestion-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border:1px solid var(--line);
+  background:var(--paper);
+  border-radius:6px;
+  padding:7px 10px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.78rem;
+  color:var(--ink);
+  cursor:pointer;
+  width:100%;
+  text-align:left;
+}
+.suggestion-item:hover{border-color:var(--amber);}
+.suggestion-value{font-weight:700;}
+.suggestion-label{color:var(--ink-soft); text-transform:capitalize;}
+.mult-toggle{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:0.76rem;
+  color:var(--ink-soft);
+  margin:8px 0 4px;
+}
+.mult-toggle input{width:14px;height:14px;cursor:pointer;}
+.mult-total{
+  display:flex;
+  justify-content:space-between;
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:700;
+  font-size:0.92rem;
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px solid var(--line);
+}
+
+.year-bars{
+  display:flex;
+  align-items:flex-end;
+  gap:4px;
+  height:120px;
+}
+.year-bar-col{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  gap:4px;
+  height:100%;
+}
+.year-bar{
+  width:70%;
+  background:var(--teal);
+  border-radius:4px 4px 0 0;
+  min-height:3px;
+  transition:height 0.2s;
+}
+.year-bar-col.current .year-bar{background:var(--amber);}
+.year-bar-label{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.6rem;
+  color:var(--ink-soft);
+}
+.year-bar-col.current .year-bar-label{color:var(--amber); font-weight:700;}
+
+.backup-banner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  background:var(--amber-soft);
+  border:1px solid var(--amber);
+  border-radius:10px;
+  padding:10px 14px;
+  margin-bottom:16px;
+  font-size:0.82rem;
+  color:var(--ink);
+}
+.backup-banner-actions{display:flex; gap:8px; flex-shrink:0;}
+.backup-banner-actions button{
+  border:none;
+  border-radius:7px;
+  padding:6px 12px;
+  font-size:0.78rem;
+  font-family:'IBM Plex Sans', sans-serif;
+  cursor:pointer;
+  font-weight:500;
+}
+.backup-banner-actions .bb-primary{background:var(--ink); color:var(--paper);}
+.backup-banner-actions .bb-ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--ink-soft);}
+
+.loading{
+  text-align:center;
+  padding:40px;
+  color:var(--ink-soft);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.85rem;
+}
+
+.login-screen{
+  min-height:70vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.login-card{
+  background:var(--paper-raised);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:32px 26px;
+  max-width:360px;
+  width:100%;
+}
+.login-title{
+  font-family:'Space Grotesk', sans-serif;
+  font-size:1.6rem;
+  margin:0 0 4px;
+  text-align:center;
+}
+.login-sub{
+  text-align:center;
+  color:var(--ink-soft);
+  font-size:0.85rem;
+  margin:0 0 20px;
+}
+.login-field{
+  display:block;
+  font-size:0.8rem;
+  color:var(--ink-soft);
+  margin-bottom:12px;
+}
+.login-field input{
+  display:block;
+  width:100%;
+  margin-top:4px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:9px 11px;
+  font-family:'IBM Plex Sans', sans-serif;
+  font-size:0.9rem;
+  color:var(--ink);
+  background:var(--paper);
+}
+.login-note{
+  font-size:0.68rem;
+  color:var(--ink-soft);
+  text-align:center;
+  margin-top:16px;
+}
+
+.structure-tabs{
+  display:flex;
+  gap:6px;
+  margin-bottom:12px;
+  flex-wrap:wrap;
+}
+.structure-tab{
+  border:1px solid var(--line);
+  background:var(--paper-raised);
+  border-radius:999px;
+  padding:7px 14px;
+  font-family:'IBM Plex Sans', sans-serif;
+  font-size:0.82rem;
+  color:var(--ink-soft);
+  cursor:pointer;
+}
+.structure-tab.active{
+  background:var(--ink);
+  color:var(--paper);
+  border-color:var(--ink);
+  font-weight:600;
+}
+.dept-filter{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid var(--line);
+}
+.dept-chip{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  border:1px solid var(--line);
+  background:var(--paper);
+  border-radius:999px;
+  padding:5px 11px;
+  font-size:0.76rem;
+  font-family:'IBM Plex Sans', sans-serif;
+  color:var(--ink-soft);
+  cursor:pointer;
+}
+.dept-chip.active{
+  border-color:var(--amber);
+  color:var(--ink);
+  font-weight:600;
+}
+.dept-dot{
+  display:inline-block;
+  width:7px;height:7px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+.shift-block .dept-dot{
+  margin-left:4px;
+  width:9px;height:9px;
+  border:2px solid rgba(255,255,255,0.85);
+  box-shadow:0 0 0 1px rgba(0,0,0,0.18);
+}
+.struct-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:7px 0;
+  border-bottom:1px dashed var(--line);
+  font-size:0.85rem;
+}
+.struct-name em{color:var(--amber); font-style:normal; font-size:0.72rem;}
+.mini-btn{
+  border:1px solid var(--line);
+  background:transparent;
+  border-radius:6px;
+  padding:3px 8px;
+  font-size:0.7rem;
+  cursor:pointer;
+  color:var(--ink-soft);
+  margin-left:4px;
+}
+.mini-btn.danger{color:var(--rust); border-color:var(--rust);}
+.dept-row{
+  display:grid;
+  grid-template-columns:28px 1fr 24px;
+  gap:8px;
+  align-items:center;
+  margin-bottom:8px;
+}
+.dept-row input[type=color]{
+  width:28px;height:28px;padding:0;border:none;border-radius:6px;cursor:pointer;background:none;
+}
+.dept-row input[type=text]{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:6px 8px;
+  font-size:0.85rem;
+  font-family:'IBM Plex Sans', sans-serif;
+  width:100%;
+}
+
+.color-picker-wrap{position:relative;}
+.color-swatch-btn{
+  width:28px;height:28px;
+  border-radius:6px;
+  border:2px solid var(--line);
+  cursor:pointer;
+  padding:0;
+}
+.color-popover{
+  position:absolute;
+  top:34px; left:0;
+  z-index:20;
+  background:var(--paper-raised);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.18);
+  width:186px;
+}
+.color-popover-title{
+  font-size:0.68rem;
+  color:var(--ink-soft);
+  margin-bottom:7px;
+}
+.color-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px;
+}
+.color-cell{
+  width:100%;
+  aspect-ratio:1/1;
+  border-radius:6px;
+  border:2px solid transparent;
+  cursor:pointer;
+  padding:0;
+}
+.color-cell.selected{border-color:var(--ink); outline:2px solid var(--paper-raised);}
+.color-custom-btn{
+  display:block;
+  margin-top:9px;
+  border:1px dashed var(--line);
+  border-radius:7px;
+  padding:6px;
+  font-size:0.7rem;
+  color:var(--ink-soft);
+  text-align:center;
+  cursor:pointer;
+}
+.color-custom-btn input{display:none;}
+
+.login-error{
+  color:var(--rust);
+  font-size:0.75rem;
+  min-height:1em;
+  margin-bottom:6px;
+  text-align:center;
+}
+.swap-card{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:11px 13px;
+  margin-bottom:9px;
+  background:var(--paper);
+}
+.swap-card.taken{opacity:0.65;}
+.swap-card-head{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin-bottom:4px;
+}
+.swap-shift{
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:700;
+  background:var(--ink);
+  color:var(--paper);
+  border-radius:5px;
+  padding:2px 8px;
+  font-size:0.8rem;
+}
+.swap-date{font-weight:600; font-size:0.88rem;}
+.swap-meta{font-size:0.72rem; color:var(--ink-soft); margin-bottom:6px;}
+.swap-note{
+  font-size:0.8rem;
+  font-style:italic;
+  color:var(--ink-soft);
+  margin-bottom:8px;
+}
+.swap-status{font-size:0.8rem; color:var(--teal); font-weight:600;}
+.pay-row input[type=date]{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:8px 10px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.85rem;
+  color:var(--ink);
+  background:var(--paper-raised);
+}
+
+.chart-legend{
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  font-size:0.72rem;
+  color:var(--ink-soft);
+  margin-bottom:10px;
+}
+.chart-legend .sw{
+  display:inline-block;
+  width:10px;height:10px;
+  border-radius:3px;
+  margin-right:4px;
+  vertical-align:middle;
+}
+.chart-legend .sw.hours{background:var(--teal);}
+.chart-legend .sw.money{background:var(--amber);}
+.chart-area{
+  display:flex;
+  align-items:flex-end;
+  gap:3px;
+  height:150px;
+  padding-bottom:4px;
+  border-bottom:1px solid var(--line);
+}
+.chart-col{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  gap:5px;
+  height:100%;
+}
+.chart-pair{
+  display:flex;
+  align-items:flex-end;
+  gap:2px;
+  width:100%;
+  height:100%;
+  justify-content:center;
+}
+.chart-bar{
+  width:44%;
+  border-radius:3px 3px 0 0;
+  min-height:0;
+}
+.chart-bar.hours{background:var(--teal);}
+.chart-bar.money{background:var(--amber);}
+.chart-col.current .chart-bar{outline:2px solid var(--ink); outline-offset:1px;}
+.chart-label{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.6rem;
+  color:var(--ink-soft);
+}
+.chart-col.current .chart-label{color:var(--ink); font-weight:700;}
+.chart-totals{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+}
+.chart-totals div{
+  flex:1;
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:9px;
+  padding:9px 11px;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.chart-totals span{font-size:0.68rem; color:var(--ink-soft);}
+.chart-totals b{font-family:'IBM Plex Mono', monospace; font-size:0.98rem;}
+.month-table{display:flex; flex-direction:column;}
+.month-row{
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:12px;
+  padding:7px 0;
+  border-bottom:1px dashed var(--line);
+  font-size:0.82rem;
+  font-family:'IBM Plex Mono', monospace;
+}
+.month-row span:first-child{text-transform:capitalize; font-family:'IBM Plex Sans', sans-serif;}
+.month-row.current{color:var(--amber); font-weight:700;}
+
+.vac-box{
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px 14px;
+}
+.vac-main{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+}
+.vac-main span{font-size:0.8rem; color:var(--ink-soft);}
+.vac-main b{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:1.5rem;
+  color:var(--teal);
+}
+.vac-main b.neg{color:var(--rust);}
+.vac-detail{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:6px;
+  font-size:0.7rem;
+  color:var(--ink-soft);
+  font-family:'IBM Plex Mono', monospace;
+}
+
+body.dark{
+  --ink:#E8ECEE;
+  --ink-soft:#93A2A9;
+  --paper:#12181F;
+  --paper-raised:#1C242D;
+  --line:#2E3941;
+  --amber-soft:#4A3A22;
+  --teal-soft:#1E362E;
+  --rust-soft:#3B2725;
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="loading" id="loading">Caricamento cartellino…</div>
+</div>
+
+<script type="module">
+// ============ CONFIGURAZIONE FIREBASE ============
+// Incolla qui i dati del tuo progetto Firebase (Impostazioni progetto -> Le tue app -> Web).
+// Finche' apiKey resta "INCOLLA_QUI", la parte online resta spenta e l'app funziona in locale.
+const firebaseConfig = {
+  apiKey: "AIzaSyCPKNvtnM1nCPxLPyfzBUqaz6gqsc9THkU",
+  authDomain: "demoonline-7c881.firebaseapp.com",
+  projectId: "demoonline-7c881",
+  storageBucket: "demoonline-7c881.firebasestorage.app",
+  messagingSenderId: "1053541344307",
+  appId: "1:1053541344307:web:6d44b0db8393e5a0ef6f46"
+};
+// ================================================
+
+window.FB = { enabled: false };
+window.FB_READY = (async ()=>{
+  if(!firebaseConfig.apiKey || firebaseConfig.apiKey === "INCOLLA_QUI") return;
+  try{
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+            signOut, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    const { getFirestore, collection, doc, addDoc, getDoc, setDoc, updateDoc,
+            deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp }
+            = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    window.FB = {
+      enabled: true, auth, db,
+      signIn: (e,p)=>signInWithEmailAndPassword(auth,e,p),
+      signUp: (e,p)=>createUserWithEmailAndPassword(auth,e,p),
+      signOut: ()=>signOut(auth),
+      onAuth: (cb)=>onAuthStateChanged(auth, cb),
+      collection, doc, addDoc, getDoc, setDoc, updateDoc, deleteDoc,
+      query, where, orderBy, onSnapshot, serverTimestamp
+    };
+  }catch(e){
+    console.error('Firebase non disponibile', e);
+    window.FB = { enabled:false };
+  }
+})();
+</script>
+<script>
+const STORAGE_LASTBACKUP_KEY = 'last-backup-at';
+const STORAGE_FIRSTUSE_KEY = 'first-use-at';
+const STORAGE_SNOOZE_KEY = 'backup-snooze-until';
+const STORAGE_DARKMODE_KEY = 'dark-mode';
+const STORAGE_AUTH_KEY = 'fake-auth-user';
+const STORAGE_STRUCTURES_KEY = 'structures';
+const STORAGE_CUSTOMCOLORS_KEY = 'custom-colors';
+const GENERAL_ID = '__all__';
+const BACKUP_REMINDER_DAYS = 30;
+const SNOOZE_DAYS = 7;
+
+// Chiavi separate per ogni struttura, cosi' ogni sede ha turni/impostazioni propri.
+const typesKey = (sid)=>`shift-types:${sid}`;
+const payKey = (sid)=>`pay-config:${sid}`;
+const deptsKey = (sid)=>`departments:${sid}`;
+const monthKeyFor = (sid,y,m)=>`month:${sid}:${y}-${String(m+1).padStart(2,'0')}`;
+const monthKey = (y,m)=>monthKeyFor(activeStructureId,y,m);
+
+const MULT_LEGEND = [
+  {value:11.08921, label:'straordinari'},
+  {value:12.39, label:'notte'},
+  {value:58.82615, label:'ferie'},
+  {value:1.44642, label:'domenica e festivi'},
+  {value:9.26958, label:'festivi'},
+];
+
+const DEFAULT_TYPES = [
+  {id:'M', code:'M', label:'Mattino', hours:6, color:'#3E7C6B'},
+  {id:'P', code:'P', label:'Pomeriggio', hours:6, color:'#D98E3D'},
+  {id:'PP', code:'P+', label:'Pomeriggio esteso', hours:8, color:'#B85450'},
+  {id:'N', code:'N', label:'Notte', hours:8, color:'#5C7FA6'},
+  {id:'R', code:'R', label:'Riposo', hours:0, color:'#8B9A96'},
+  {id:'F', code:'F', label:'Ferie', hours:0, color:'#8B9A96'},
+];
+function defaultPay(){
+  return {
+    hourlyRate: 10,
+    taxPercent: 18,
+    startDate: null,       // quando ha iniziato in questa struttura
+    vacationPerMonth: 0,   // giorni di ferie maturati ogni mese
+    multipliers: {
+      overtime: {m1:null, m2:null, useM2:false},
+      holiday: {m1:null, m2:null, useM2:false},
+      sunday: {m1:null, m2:null, useM2:false},
+      night: {m1:null, m2:null, useM2:false},
+      vacation: {m1:null, m2:null, useM2:false},
+    }
+  };
+}
+
+let types = DEFAULT_TYPES;
+let pay = defaultPay();
+let structures = [];
+let activeStructureId = null;
+let departments = [];
+let deptFilter = null;   // id reparto da mostrare, null = tutti
+let today = new Date();
+let viewY = today.getFullYear();
+let viewM = today.getMonth();
+let monthData = {shifts:{}, net:null, extra:{}, overtimeThreshold:null, taxes:null};
+let editMode = false;
+let authUser = null;
+let openEarningsSections = new Set();
+let activePanel = null; // 'settings' | 'stats' | 'earnings' | null
+let darkMode = false;
+let openSuggestionKeys = new Set();
+let openColorPicker = null; // es. 'type:2' oppure 'dept:0'
+let customColors = [];  // ultimi colori personalizzati usati
+let groupCode = null;        // codice del gruppo di lavoro
+let displayName = '';        // nome mostrato ai colleghi
+let openRequests = [];       // richieste di scambio del gruppo
+let requestsUnsub = null;    // per staccare l'ascolto in tempo reale
+let onlineBusy = false;
+const STORAGE_GROUP_KEY = 'work-group';
+
+function loadCustomColors(){
+  try{
+    const v = localStorage.getItem(STORAGE_CUSTOMCOLORS_KEY);
+    customColors = v ? JSON.parse(v) : [];
+  }catch(e){ customColors = []; }
+}
+function rememberCustomColor(hex){
+  const h = String(hex).toLowerCase();
+  if(COLOR_PALETTE.some(c=>c.hex.toLowerCase()===h)) return; // gia' nella tavolozza
+  customColors = [h, ...customColors.filter(x=>x!==h)].slice(0,8);
+  try{ localStorage.setItem(STORAGE_CUSTOMCOLORS_KEY, JSON.stringify(customColors)); }catch(e){}
+}
+
+const COLOR_PALETTE = [
+  {hex:'#3E7C6B', name:'Verde bosco'},
+  {hex:'#4A8C5F', name:'Verde prato'},
+  {hex:'#6FA287', name:'Verde salvia'},
+  {hex:'#D98E3D', name:'Arancio'},
+  {hex:'#E3B23C', name:'Giallo senape'},
+  {hex:'#C26A2E', name:'Terracotta'},
+  {hex:'#B85450', name:'Rosso mattone'},
+  {hex:'#D4737E', name:'Rosa antico'},
+  {hex:'#8B4A6B', name:'Prugna'},
+  {hex:'#5C7FA6', name:'Blu polvere'},
+  {hex:'#3F6494', name:'Blu notte'},
+  {hex:'#4EA0A8', name:'Turchese'},
+  {hex:'#7A5C9E', name:'Viola'},
+  {hex:'#8B9A96', name:'Grigio verde'},
+  {hex:'#6B7280', name:'Grigio'},
+  {hex:'#3A3F45', name:'Antracite'},
+];
+
+const ITALIAN_MONTHS = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+const ITALIAN_MONTHS_SHORT = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+const ITALIAN_WEEKDAYS = ['L','M','M','G','V','S','D'];
+
+function getEasterDate(year){
+  const a = year % 19;
+  const b = Math.floor(year/100);
+  const c = year % 100;
+  const d = Math.floor(b/4);
+  const e = b % 4;
+  const f = Math.floor((b+8)/25);
+  const g = Math.floor((b-f+1)/3);
+  const h = (19*a+b-d-g+15)%30;
+  const i = Math.floor(c/4);
+  const k = c%4;
+  const l = (32+2*e+2*i-h-k)%7;
+  const m = Math.floor((a+11*h+22*l)/451);
+  const month = Math.floor((h+l-7*m+114)/31);
+  const day = ((h+l-7*m+114)%31)+1;
+  return new Date(year, month-1, day);
+}
+const holidaySetCache = {};
+function getHolidaySet(year){
+  if(holidaySetCache[year]) return holidaySetCache[year];
+  const set = {};
+  const add=(m,d,name)=>{ set[`${m}-${d}`]=name; };
+  add(0,1,'Capodanno');
+  add(0,6,'Epifania');
+  add(3,25,'Festa della Liberazione');
+  add(4,1,'Festa dei Lavoratori');
+  add(5,2,'Festa della Repubblica');
+  add(7,15,'Ferragosto');
+  add(10,1,'Ognissanti');
+  add(11,8,'Immacolata Concezione');
+  add(11,25,'Natale');
+  add(11,26,'Santo Stefano');
+  const easter = getEasterDate(year);
+  const easterMonday = new Date(easter.getFullYear(), easter.getMonth(), easter.getDate()+1);
+  set[`${easterMonday.getMonth()}-${easterMonday.getDate()}`] = 'Pasquetta';
+  holidaySetCache[year] = set;
+  return set;
+}
+function getHolidayName(y,m,d){
+  return getHolidaySet(y)[`${m}-${d}`] || null;
+}
+
+// Sposta i dati del vecchio formato (senza strutture) dentro la prima struttura.
+function migrateLegacyData(){
+  try{
+    if(localStorage.getItem(STORAGE_STRUCTURES_KEY)) return; // gia' migrato
+    const sid = 's1';
+    const legacyTypes = localStorage.getItem('shift-types');
+    const legacyPay = localStorage.getItem('pay-config');
+    if(legacyTypes){ localStorage.setItem(typesKey(sid), legacyTypes); localStorage.removeItem('shift-types'); }
+    if(legacyPay){ localStorage.setItem(payKey(sid), legacyPay); localStorage.removeItem('pay-config'); }
+    const legacyMonths = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && /^month-\d{4}-\d{2}$/.test(k)) legacyMonths.push(k);
+    }
+    legacyMonths.forEach(k=>{
+      const ym = k.substring('month-'.length);
+      localStorage.setItem(`month:${sid}:${ym}`, localStorage.getItem(k));
+      localStorage.removeItem(k);
+    });
+    localStorage.setItem(STORAGE_STRUCTURES_KEY, JSON.stringify([{id:sid, name:'Struttura 1'}]));
+  }catch(e){ console.error('Migrazione non riuscita', e); }
+}
+
+function loadStructures(){
+  try{
+    const s = localStorage.getItem(STORAGE_STRUCTURES_KEY);
+    structures = s ? JSON.parse(s) : [];
+  }catch(e){ structures = []; }
+  if(!structures.length){
+    structures = [{id:'s1', name:'Struttura 1'}];
+    saveStructures();
+  }
+  if(!activeStructureId || !structures.some(s=>s.id===activeStructureId)){
+    activeStructureId = structures[0].id;
+  }
+}
+function saveStructures(){
+  try{ localStorage.setItem(STORAGE_STRUCTURES_KEY, JSON.stringify(structures)); }catch(e){}
+}
+
+function loadDepartments(){
+  try{
+    const d = localStorage.getItem(deptsKey(activeStructureId));
+    departments = d ? JSON.parse(d) : [];
+  }catch(e){ departments = []; }
+}
+function saveDepartments(){
+  try{ localStorage.setItem(deptsKey(activeStructureId), JSON.stringify(departments)); }catch(e){}
+}
+
+async function loadSettings(){
+  types = JSON.parse(JSON.stringify(DEFAULT_TYPES));
+  try{
+    const t = localStorage.getItem(typesKey(activeStructureId));
+    if(t) types = JSON.parse(t);
+  }catch(e){}
+  pay = defaultPay();
+  try{
+    const p = localStorage.getItem(payKey(activeStructureId));
+    if(p){
+      const parsed = JSON.parse(p);
+      if(parsed.hourlyRate!==undefined) pay.hourlyRate = parsed.hourlyRate;
+      if(parsed.taxPercent!==undefined) pay.taxPercent = parsed.taxPercent;
+      if(parsed.startDate!==undefined) pay.startDate = parsed.startDate;
+      if(parsed.vacationPerMonth!==undefined) pay.vacationPerMonth = parsed.vacationPerMonth;
+      if(parsed.multipliers){
+        Object.keys(pay.multipliers).forEach(k=>{
+          if(parsed.multipliers[k]) pay.multipliers[k] = {...pay.multipliers[k], ...parsed.multipliers[k]};
+        });
+      }
+    }
+  }catch(e){}
+  loadDepartments();
+  try{
+    darkMode = localStorage.getItem(STORAGE_DARKMODE_KEY) === '1';
+  }catch(e){ darkMode = false; }
+  applyDarkModeClass();
+  try{
+    const a = localStorage.getItem(STORAGE_AUTH_KEY);
+    authUser = a ? JSON.parse(a) : null;
+  }catch(e){ authUser = null; }
+}
+function applyDarkModeClass(){
+  document.body.classList.toggle('dark', darkMode);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content', darkMode ? '#12181F' : '#1C2B39');
+}
+async function saveSettings(){
+  try{
+    localStorage.setItem(typesKey(activeStructureId), JSON.stringify(types));
+    localStorage.setItem(payKey(activeStructureId), JSON.stringify(pay));
+  }catch(e){ console.error('Errore salvataggio impostazioni', e); }
+}
+
+// Le voci vecchie erano semplici stringhe (id turno); ora {t:idTurno, d:idReparto}.
+// Raccoglie i turni di tutte le strutture per il mese corrente (vista sola lettura).
+function buildGeneralDayMap(y,m){
+  const map = {};
+  structures.forEach(s=>{
+    let sTypes = DEFAULT_TYPES, sDepts = [];
+    try{
+      const t = localStorage.getItem(typesKey(s.id));
+      if(t) sTypes = JSON.parse(t);
+    }catch(e){}
+    try{
+      const d = localStorage.getItem(deptsKey(s.id));
+      if(d) sDepts = JSON.parse(d);
+    }catch(e){}
+    let sMonth = null;
+    try{
+      const raw = localStorage.getItem(monthKeyFor(s.id, y, m));
+      if(raw) sMonth = normalizeMonthData(JSON.parse(raw));
+    }catch(e){}
+    if(!sMonth) return;
+    Object.entries(sMonth.shifts).forEach(([day,list])=>{
+      list.forEach(entry=>{
+        const t = sTypes.find(x=>x.id===entry.t);
+        if(!t) return;
+        const dp = sDepts.find(x=>x.id===entry.d);
+        if(!map[day]) map[day] = [];
+        map[day].push({
+          code: t.code, color: t.color, label: t.label,
+          structureName: s.name,
+          deptName: dp?dp.name:null, deptColor: dp?dp.color:null
+        });
+      });
+    });
+  });
+  return map;
+}
+
+function normalizeShiftEntry(v){
+  if(typeof v === 'string') return {t:v, d:null};
+  if(v && typeof v === 'object') return {t:v.t, d:(v.d===undefined?null:v.d)};
+  return {t:null, d:null};
+}
+
+function normalizeMonthData(parsed){
+  if(parsed && typeof parsed==='object' && parsed.shifts){
+    const shifts = {};
+    Object.entries(parsed.shifts).forEach(([d,v])=>{ shifts[d] = (Array.isArray(v)?v:[v]).map(normalizeShiftEntry); });
+    const extra = {};
+    if(parsed.extra) Object.entries(parsed.extra).forEach(([d,v])=>{ extra[d] = Number(v); });
+    return {shifts, net: (parsed.net===undefined?null:parsed.net), extra, overtimeThreshold: (parsed.overtimeThreshold===undefined?null:parsed.overtimeThreshold), taxes: (parsed.taxes===undefined?null:parsed.taxes)};
+  }
+  if(parsed && typeof parsed==='object'){
+    const shifts = {};
+    Object.entries(parsed).forEach(([d,v])=>{ shifts[d] = (Array.isArray(v)?v:[v]).map(normalizeShiftEntry); });
+    return {shifts, net:null, extra:{}, overtimeThreshold:null, taxes:null};
+  }
+  return {shifts:{}, net:null, extra:{}, overtimeThreshold:null, taxes:null};
+}
+
+async function loadMonth(y,m){
+  try{
+    const r = localStorage.getItem(monthKey(y,m));
+    monthData = r ? normalizeMonthData(JSON.parse(r)) : {shifts:{}, net:null, extra:{}, overtimeThreshold:null, taxes:null};
+  }catch(e){ monthData = {shifts:{}, net:null, extra:{}, overtimeThreshold:null, taxes:null}; }
+}
+async function saveMonth(y,m){
+  try{
+    localStorage.setItem(monthKey(y,m), JSON.stringify(monthData));
+  }catch(e){ console.error('Errore salvataggio turni del mese', e); }
+}
+
+function exportBackup(){
+  const data = {};
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k===STORAGE_STRUCTURES_KEY || k.startsWith('shift-types:') || k.startsWith('pay-config:') || k.startsWith('departments:') || k.startsWith('month:')){
+      data[k] = localStorage.getItem(k);
+    }
+  }
+  const jsonStr = JSON.stringify(data, null, 2);
+
+  if(window.ExportBackup){
+    // Dentro l'app Flutter: manda il contenuto al lato nativo, che lo condivide/salva.
+    const b64 = btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (m,p1)=>String.fromCharCode('0x'+p1)));
+    window.ExportBackup.postMessage(b64);
+  } else {
+    // Browser normale: scarica come file, come sempre.
+    const blob = new Blob([jsonStr], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cartellino-backup.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  localStorage.setItem(STORAGE_LASTBACKUP_KEY, new Date().toISOString());
+  localStorage.removeItem(STORAGE_SNOOZE_KEY);
+  render();
+}
+window.exportBackup = exportBackup;
+
+function daysSince(dateStr){
+  return (Date.now() - new Date(dateStr).getTime()) / (1000*60*60*24);
+}
+function shouldShowBackupReminder(){
+  const snooze = localStorage.getItem(STORAGE_SNOOZE_KEY);
+  if(snooze && new Date(snooze).getTime() > Date.now()) return false;
+  const last = localStorage.getItem(STORAGE_LASTBACKUP_KEY) || localStorage.getItem(STORAGE_FIRSTUSE_KEY);
+  if(!last) return false;
+  return daysSince(last) >= BACKUP_REMINDER_DAYS;
+}
+window.snoozeBackup = function(){
+  const d = new Date(Date.now() + SNOOZE_DAYS*24*60*60*1000);
+  localStorage.setItem(STORAGE_SNOOZE_KEY, d.toISOString());
+  render();
+};
+
+function importBackup(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+      Object.entries(data).forEach(([k,v])=>localStorage.setItem(k,v));
+      await loadSettings();
+      await loadMonth(viewY, viewM);
+      alert('Backup importato con successo.');
+      closePanel();
+      render();
+    }catch(err){
+      alert('File di backup non valido.');
+    }
+  };
+  reader.readAsText(file);
+}
+window.importBackup = importBackup;
+
+function typeById(id){ return types.find(t=>t.id===id); }
+
+function calcMultiplied(qty, cfg){
+  if(!cfg) return 0;
+  const m1 = Number(cfg.m1)||0;
+  let total = qty * m1;
+  if(cfg.useM2){
+    const m2 = Number(cfg.m2)||0;
+    total += qty * m2;
+  }
+  return total;
+}
+
+function computeSummary(){
+  let normalHours = 0;
+  let holidayHours = 0, sundayHours = 0;
+  let vacationDays = new Set();
+  let nightDays = new Set();
+
+  Object.entries(monthData.shifts).forEach(([day,list])=>{
+    const d = Number(day);
+    const isSunday = new Date(viewY, viewM, d).getDay()===0;
+    const holidayName = getHolidayName(viewY, viewM, d);
+    const isHoliday = !!holidayName;
+
+    list.forEach(entry=>{
+      const t = typeById(entry.t);
+      if(!t) return;
+      const hrs = Number(t.hours)||0;
+      const code = (t.code||'').trim().toUpperCase();
+
+      if(code==='N') nightDays.add(day);
+
+      if(code==='F'){
+        vacationDays.add(day);
+        return; // solo giorno, non ore/soldi
+      }
+      if(isHoliday){ holidayHours += hrs; return; }
+      if(isSunday){ sundayHours += hrs; return; }
+      normalHours += hrs;
+    });
+  });
+
+  const ordinaryHours = normalHours + sundayHours; // usate per il lordo stimato
+  const totalHours = normalHours + sundayHours + holidayHours; // tutte le ore lavorate
+  const gross = ordinaryHours * (Number(pay.hourlyRate)||0);
+
+  return {
+    totalHours, ordinaryHours, gross,
+    holidayHours, sundayHours,
+    vacationDays: vacationDays.size, nightDays: nightDays.size,
+    net: monthData.net
+  };
+}
+
+function fmtEuro(n){
+  if(n===null || n===undefined || n==='') return '—';
+  return Number(n).toLocaleString('it-IT', {style:'currency', currency:'EUR'});
+}
+function fmtHours(n){
+  return Number(n).toLocaleString('it-IT', {maximumFractionDigits:1});
+}
+
+function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
+function firstWeekdayMon0(y,m){
+  const d = new Date(y,m,1).getDay();
+  return (d+6)%7;
+}
+
+function hexToSoftBg(hex){
+  const c = hex.replace('#','');
+  const r = parseInt(c.substring(0,2),16), g = parseInt(c.substring(2,4),16), b = parseInt(c.substring(4,6),16);
+  return `rgba(${r},${g},${b},0.18)`;
+}
+
+
+// Calcola ore lavorate e totale (tasse gia' sottratte) per un mese qualunque
+// della struttura attiva, senza modificare quello che si sta guardando.
+function computeMonthStats(y, m){
+  let raw = null;
+  try{ raw = localStorage.getItem(monthKeyFor(activeStructureId, y, m)); }catch(e){}
+  if(!raw) return {hours:0, total:0, net:null, hasData:false};
+  let md;
+  try{ md = normalizeMonthData(JSON.parse(raw)); }catch(e){ return {hours:0,total:0,net:null,hasData:false}; }
+
+  let normalH=0, holH=0, sunH=0, vacDays=new Set(), nightDays=new Set();
+  Object.entries(md.shifts).forEach(([day,list])=>{
+    const d = Number(day);
+    const isSun = new Date(y,m,d).getDay()===0;
+    const isHol = !!getHolidayName(y,m,d);
+    list.forEach(entry=>{
+      const t = typeById(entry.t);
+      if(!t) return;
+      const hrs = Number(t.hours)||0;
+      const code = (t.code||'').trim().toUpperCase();
+      if(code==='N') nightDays.add(day);
+      if(code==='F'){ vacDays.add(day); return; }
+      if(isHol) holH += hrs;
+      else if(isSun) sunH += hrs;
+      else normalH += hrs;
+    });
+  });
+
+  const ordinary = normalH + sunH;
+  const hours = normalH + sunH + holH;
+  const gross = ordinary * (Number(pay.hourlyRate)||0);
+  const otH = calcOvertimeHours(md.overtimeThreshold, ordinary);
+  const otAmount = calcMultiplied(otH, pay.multipliers.overtime);
+  const otBase = otH * (Number(pay.hourlyRate)||0);
+  const grand = gross - otBase + otAmount
+    + calcMultiplied(holH, pay.multipliers.holiday)
+    + calcMultiplied(sunH, pay.multipliers.sunday)
+    + calcMultiplied(nightDays.size, pay.multipliers.night)
+    + calcMultiplied(vacDays.size, pay.multipliers.vacation);
+  const pct = (pay.taxPercent===null||pay.taxPercent===undefined) ? 18 : Number(pay.taxPercent);
+  const total = grand * (1 - pct/100);
+  return {hours, total, net: (md.net===undefined?null:md.net), hasData: hours>0 || grand>0 || md.net!=null};
+}
+
+// Ferie maturate dall'inizio del lavoro meno quelle gia' godute.
+function computeVacationBalance(){
+  const rate = Number(pay.vacationPerMonth)||0;
+  if(!pay.startDate || rate<=0) return null;
+  const start = new Date(pay.startDate);
+  if(isNaN(start.getTime())) return null;
+
+  const now = new Date();
+  let months = (now.getFullYear()-start.getFullYear())*12 + (now.getMonth()-start.getMonth());
+  if(now.getDate() >= start.getDate()) months += 1;   // mese in corso gia' maturato
+  months = Math.max(0, months);
+  const accrued = months * rate;
+
+  // conta i giorni di ferie inseriti dal mese di inizio a oggi
+  let used = 0;
+  let y = start.getFullYear(), m = start.getMonth();
+  while(y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth())){
+    try{
+      const raw = localStorage.getItem(monthKeyFor(activeStructureId, y, m));
+      if(raw){
+        const md = normalizeMonthData(JSON.parse(raw));
+        const days = new Set();
+        Object.entries(md.shifts).forEach(([day,list])=>{
+          list.forEach(entry=>{
+            const t = typeById(entry.t);
+            if(t && (t.code||'').trim().toUpperCase()==='F') days.add(day);
+          });
+        });
+        used += days.size;
+      }
+    }catch(e){}
+    m++; if(m>11){ m=0; y++; }
+  }
+  return {months, accrued, used, left: accrued - used};
+}
+
+function renderVacationBox(){
+  const v = computeVacationBalance();
+  if(!v){
+    return `<div class="calendar-note">imposta data di inizio e giorni di ferie al mese nelle impostazioni per vedere il saldo</div>`;
+  }
+  return `
+    <div class="vac-box">
+      <div class="vac-main">
+        <span>Ferie disponibili</span>
+        <b class="${v.left<0?'neg':''}">${fmtHours(v.left)} gg</b>
+      </div>
+      <div class="vac-detail">
+        <span>maturate: ${fmtHours(v.accrued)} gg (${v.months} mesi)</span>
+        <span>godute: ${fmtHours(v.used)} gg</span>
+      </div>
+    </div>`;
+}
+
+// Anni per cui esistono dati salvati nella struttura attiva.
+function getYearsWithData(){
+  const years = new Set();
+  const prefix = `month:${activeStructureId}:`;
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith(prefix)){
+        const y = Number(k.substring(prefix.length).split('-')[0]);
+        if(!isNaN(y)) years.add(y);
+      }
+    }
+  }catch(e){}
+  years.add(viewY);
+  return [...years].sort((a,b)=>b-a);   // dal piu' recente
+}
+
+function renderYearChart(year){
+  const data = [];
+  for(let m=0;m<12;m++){ data.push(computeMonthStats(year,m)); }
+  const netOf = (d)=> (d.net===null||d.net===undefined) ? 0 : Number(d.net);
+  const maxH = Math.max(1, ...data.map(d=>d.hours));
+  const maxT = Math.max(1, ...data.map(d=>netOf(d)));
+
+  const totHours = data.reduce((s,d)=>s+d.hours,0);
+  const totMoney = data.reduce((s,d)=>s+netOf(d),0);
+
+  const cols = data.map((d,m)=>{
+    const hH = d.hours>0 ? Math.max(3, Math.round((d.hours/maxH)*100)) : 0;
+    const nv = netOf(d);
+    const hT = nv>0 ? Math.max(3, Math.round((nv/maxT)*100)) : 0;
+    const cur = m===viewM ? 'current' : '';
+    return `
+      <div class="chart-col ${cur}" title="${ITALIAN_MONTHS_SHORT[m]} — ${fmtHours(d.hours)} h · ${nv>0?fmtEuro(nv):'netto non inserito'}">
+        <div class="chart-pair">
+          <div class="chart-bar hours" style="height:${hH}%;"></div>
+          <div class="chart-bar money" style="height:${hT}%;"></div>
+        </div>
+        <span class="chart-label">${ITALIAN_MONTHS_SHORT[m]}</span>
+      </div>`;
+  }).join('');
+
+  return {
+    chart: `
+      <div class="chart-legend">
+        <span><i class="sw hours"></i> ore lavorate</span>
+        <span><i class="sw money"></i> netto inserito</span>
+      </div>
+      <div class="chart-area">${cols}</div>`,
+    summary: `
+      <div class="chart-totals">
+        <div><span>Ore nell'anno</span><b>${fmtHours(totHours)} h</b></div>
+        <div><span>Netto nell'anno</span><b>${fmtEuro(totMoney)}</b></div>
+      </div>
+      <div class="section-label" style="margin-top:18px;">Dettaglio mensile</div>
+      <div class="month-table">
+        ${data.map((d,m)=> d.hasData ? `
+          <div class="month-row ${m===viewM?'current':''}">
+            <span>${ITALIAN_MONTHS[m]}</span>
+            <span>${fmtHours(d.hours)} h</span>
+            <span>${(d.net===null||d.net===undefined)?'—':fmtEuro(d.net)}</span>
+          </div>` : '').join('') || `<div class="calendar-note">nessun dato per il ${year}</div>`}
+      </div>`
+  };
+}
+
+function renderAnnualNetChart(){
+  const year = viewY;
+  const nets = [];
+  for(let m=0;m<12;m++){ nets.push(getStoredNet(year,m)); }
+  const present = nets.filter(v=>v!==null && v!==undefined);
+  const maxNet = Math.max(1, ...present.map(Number));
+  const bars = nets.map((v,m)=>{
+    const hasVal = v!==null && v!==undefined;
+    const h = hasVal ? Math.max(4, Math.round((Number(v)/maxNet)*100)) : 2;
+    const isCur = m===viewM;
+    return `<div class="year-bar-col ${isCur?'current':''}" title="${ITALIAN_MONTHS_SHORT[m]}: ${hasVal?fmtEuro(v):'non inserito'}">
+      <div class="year-bar" style="height:${h}%;"></div>
+      <span class="year-bar-label">${ITALIAN_MONTHS_SHORT[m]}</span>
+    </div>`;
+  }).join('');
+  return `<div class="year-bars">${bars}</div>`;
+}
+function getStoredNet(y,m){
+  try{
+    const r = localStorage.getItem(monthKey(y,m));
+    if(!r) return null;
+    const p = normalizeMonthData(JSON.parse(r));
+    return p.net===undefined?null:p.net;
+  }catch(e){ return null; }
+}
+
+function calcOvertimeHours(threshold, ordinaryHours){
+  if(threshold===null || threshold===undefined || threshold==='') return 0;
+  return Math.max(0, ordinaryHours - Number(threshold));
+}
+
+function renderColorPicker(kind, idx, currentColor){
+  const key = `${kind}:${idx}`;
+  const isOpen = openColorPicker === key;
+  const current = COLOR_PALETTE.find(c=>c.hex.toLowerCase()===String(currentColor).toLowerCase());
+  return `
+    <div class="color-picker-wrap">
+      <button type="button" class="color-swatch-btn" style="background:${currentColor};"
+        title="${current?current.name:'Colore personalizzato'}" onclick="toggleColorPicker('${key}')"></button>
+      ${isOpen?`
+      <div class="color-popover">
+        <div class="color-popover-title">Scegli un colore</div>
+        <div class="color-grid">
+          ${COLOR_PALETTE.map(c=>`<button type="button" class="color-cell ${c.hex.toLowerCase()===String(currentColor).toLowerCase()?'selected':''}" style="background:${c.hex};" title="${c.name}" onclick="pickColor('${kind}',${idx},'${c.hex}')"></button>`).join('')}
+        </div>
+        ${customColors.length?`
+        <div class="color-popover-title" style="margin-top:9px;">Usati di recente</div>
+        <div class="color-grid">
+          ${customColors.map(h=>`<button type="button" class="color-cell ${h===String(currentColor).toLowerCase()?'selected':''}" style="background:${h};" title="${h}" onclick="pickColor('${kind}',${idx},'${h}')"></button>`).join('')}
+        </div>`:''}
+        <label class="color-custom-btn">
+          🎨 Colore personalizzato
+          <input type="color" value="${currentColor}" onchange="pickCustomColor('${kind}',${idx},this.value)">
+        </label>
+      </div>`:''}
+    </div>`;
+}
+
+function renderSuggestions(catKey, field){
+  const key = `${catKey}_${field}`;
+  const isOpen = openSuggestionKeys.has(key);
+  return `
+    <button type="button" class="suggestions-toggle" onclick="toggleSuggestions('${key}')">${isOpen?'▲':'▼'} suggerimenti</button>
+    ${isOpen ? `
+    <div class="suggestions-list">
+      ${MULT_LEGEND.map(item=>`<button type="button" class="suggestion-item" onclick="setMult('${catKey}','${field}',${item.value})"><span class="suggestion-value">×${item.value}</span><span class="suggestion-label">${item.label}</span></button>`).join('')}
+    </div>` : ''}
+  `;
+}
+
+function renderMultBlock(catKey, label, qty, unitLabel, unitSuffix){
+  const cfg = pay.multipliers[catKey];
+  const amount = calcMultiplied(qty, cfg);
+  const isOpen = openEarningsSections.has(catKey);
+  return `
+    <div class="mult-block">
+      <button type="button" class="mult-header" onclick="toggleEarningsSection('${catKey}')">
+        <span class="mult-title">${label}</span>
+        <span class="mult-header-right"><b>${fmtEuro(amount)}</b><span class="chevron">${isOpen?'▲':'▼'}</span></span>
+      </button>
+      ${isOpen?`
+      <div class="mult-body">
+        <div class="special-row"><span>${unitLabel}</span><span>${fmtHours(qty)} ${unitSuffix}</span></div>
+        <div class="mult-row">
+          <input type="number" step="any" class="mult-input" placeholder="moltiplicatore" value="${cfg.m1!==null&&cfg.m1!==undefined?cfg.m1:''}" data-cat="${catKey}" data-field="m1" onchange="onMultChange(event)">
+        </div>
+        ${renderSuggestions(catKey,'m1')}
+        <label class="mult-toggle">
+          <input type="checkbox" ${cfg.useM2?'checked':''} data-cat="${catKey}" onchange="onMultToggle(event)">
+          Aggiungi una seconda moltiplicazione
+        </label>
+        ${cfg.useM2?`
+        <div class="mult-row">
+          <input type="number" step="any" class="mult-input" placeholder="secondo moltiplicatore" value="${cfg.m2!==null&&cfg.m2!==undefined?cfg.m2:''}" data-cat="${catKey}" data-field="m2" onchange="onMultChange(event)">
+        </div>
+        ${renderSuggestions(catKey,'m2')}`:''}
+        <div class="mult-total"><span>Totale stimato</span><span>${fmtEuro(amount)}</span></div>
+      </div>`:''}
+    </div>`;
+}
+
+function renderOvertimeBlock(summary){
+  const threshold = monthData.overtimeThreshold;
+  const overtimeHours = calcOvertimeHours(threshold, summary.ordinaryHours);
+  const cfg = pay.multipliers.overtime;
+  const amount = calcMultiplied(overtimeHours, cfg);
+  const isOpen = openEarningsSections.has('overtime');
+  return `
+    <div class="mult-block">
+      <button type="button" class="mult-header" onclick="toggleEarningsSection('overtime')">
+        <span class="mult-title">Straordinari</span>
+        <span class="mult-header-right"><b>${fmtEuro(amount)}</b><span class="chevron">${isOpen?'▲':'▼'}</span></span>
+      </button>
+      ${isOpen?`
+      <div class="mult-body">
+        <div class="special-row"><span>Ore ordinarie del mese</span><span>${fmtHours(summary.ordinaryHours)} h</span></div>
+        <div class="mult-row">
+          <input type="number" step="1" class="mult-input" placeholder="soglia ore di questo mese" value="${threshold!==null&&threshold!==undefined?threshold:''}" onchange="onThresholdChange(event)">
+        </div>
+        <div class="mult-suggestions-inline">
+          <button type="button" class="mult-chip" onclick="setThreshold(165)">165 h</button>
+          <button type="button" class="mult-chip" onclick="setThreshold(85)">85 h</button>
+        </div>
+        <div class="special-row"><span>Ore eccedenti</span><span>${fmtHours(overtimeHours)} h</span></div>
+        <div class="mult-row">
+          <input type="number" step="any" class="mult-input" placeholder="moltiplicatore" value="${cfg.m1!==null&&cfg.m1!==undefined?cfg.m1:''}" data-cat="overtime" data-field="m1" onchange="onMultChange(event)">
+        </div>
+        ${renderSuggestions('overtime','m1')}
+        <div class="mult-total"><span>Totale straordinari</span><span>${fmtEuro(amount)}</span></div>
+      </div>`:''}
+    </div>`;
+}
+
+function renderEarningsPanel(summary){
+  const threshold = monthData.overtimeThreshold;
+  const overtimeHours = calcOvertimeHours(threshold, summary.ordinaryHours);
+  const overtimeAmount = calcMultiplied(overtimeHours, pay.multipliers.overtime);
+  const overtimeBaseAlreadyInGross = overtimeHours * (Number(pay.hourlyRate)||0);
+  const holidayAmount = calcMultiplied(summary.holidayHours, pay.multipliers.holiday);
+  const sundayAmount = calcMultiplied(summary.sundayHours, pay.multipliers.sunday);
+  const nightAmount = calcMultiplied(summary.nightDays, pay.multipliers.night);
+  const vacationAmount = calcMultiplied(summary.vacationDays, pay.multipliers.vacation);
+  // Le ore di straordinario sono gia' incluse (a tariffa normale) dentro "gross":
+  // le sottraiamo una volta a tariffa normale e le riaggiungiamo alla tariffa straordinaria,
+  // cosi' non vengono pagate due volte.
+  const grandTotal = summary.gross - overtimeBaseAlreadyInGross + overtimeAmount + holidayAmount + sundayAmount + nightAmount + vacationAmount;
+
+  const taxPct = (pay.taxPercent===null||pay.taxPercent===undefined) ? 18 : Number(pay.taxPercent);
+  const taxAmount = grandTotal * (taxPct/100);
+  const totalAfterTaxes = grandTotal - taxAmount;
+
+  return `
+    <h2>Guadagni — ${ITALIAN_MONTHS[viewM]} ${viewY}</h2>
+    <div class="section-label">Riepilogo mese</div>
+    <div class="special-row"><span>Ore totali</span><span>${fmtHours(summary.totalHours)} h</span></div>
+    <div class="special-row"><span>Lordo (ore ordinarie)</span><span>${fmtEuro(summary.gross)}</span></div>
+    <div class="special-row special-row-sep" style="color:var(--ink-soft); font-size:0.72rem;">+ straordinari / festivi / domenicali / notte / ferie (dettaglio sotto)</div>
+    <div class="mult-total" style="font-size:1rem; margin-top:10px; border-top:none; padding-top:0;">
+      <span>Totale mese stimato</span>
+      <span>${fmtEuro(grandTotal)}</span>
+    </div>
+    <div class="special-row" style="color:var(--rust);">
+      <span>Tasse (${taxPct}%) <button type="button" class="mini-btn" onclick="changeTaxPercent()">modifica</button></span>
+      <span>− ${fmtEuro(taxAmount)}</span>
+    </div>
+    <div class="mult-total" style="font-size:1rem;">
+      <span>Stipendio netto stimato</span>
+      <span>${fmtEuro(totalAfterTaxes)}</span>
+    </div>
+    <div style="margin:16px 0 20px;">
+      <div class="section-label" style="margin:0 0 6px;">Netto reale del mese</div>
+      <input type="number" step="0.01" class="net-input-light" id="netInput" placeholder="Inserisci l'importo" value="${summary.net===null||summary.net===undefined?'':summary.net}" onchange="onNetChange(event)">
+    </div>
+    ${renderOvertimeBlock(summary)}
+    ${renderMultBlock('holiday','Festivi', summary.holidayHours, 'Ore', 'h')}
+    ${renderMultBlock('sunday','Domenicali', summary.sundayHours, 'Ore', 'h')}
+    ${renderMultBlock('night','Notte', summary.nightDays, 'Giorni', 'gg')}
+    ${renderMultBlock('vacation','Ferie', summary.vacationDays, 'Giorni', 'gg')}
+  `;
+}
+
+function renderStatsPanel(){
+  const years = getYearsWithData();
+
+  const yearBlocks = years.map(year=>{
+    const openKey = 'year:' + year;
+    // l'anno che si sta guardando nel calendario e' aperto di default
+    const isOpen = openEarningsSections.has(openKey) ||
+                   (year===viewY && !openEarningsSections.has('closed:'+year));
+    if(!isOpen){
+      return `
+        <div class="mult-block">
+          <button type="button" class="mult-header" onclick="toggleYearSection(${year})">
+            <span class="mult-title">${year}</span>
+            <span class="mult-header-right"><span class="chevron">▼</span></span>
+          </button>
+        </div>`;
+    }
+    const y = renderYearChart(year);
+    const chartKey = 'chart:' + year;
+    const chartOpen = openEarningsSections.has(chartKey);
+    return `
+      <div class="mult-block">
+        <button type="button" class="mult-header" onclick="toggleYearSection(${year})">
+          <span class="mult-title">${year}</span>
+          <span class="mult-header-right"><span class="chevron">▲</span></span>
+        </button>
+        <div class="mult-body">
+          ${y.summary}
+          <div class="mult-block" style="margin-top:14px;">
+            <button type="button" class="mult-header" onclick="toggleEarningsSection('${chartKey}')">
+              <span class="mult-title" style="font-size:0.9rem;">Grafico ${year}</span>
+              <span class="mult-header-right"><span class="chevron">${chartOpen?'▲':'▼'}</span></span>
+            </button>
+            ${chartOpen?`<div class="mult-body">${y.chart}</div>`:''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <h2>Statistiche</h2>
+
+    <div class="section-label">Ferie</div>
+    ${renderVacationBox()}
+
+    <div class="section-label" style="margin-top:20px;">Anni</div>
+    ${yearBlocks}
+  `;
+}
+
+function renderSettingsPanel(){
+  return `
+    <h2>Impostazioni</h2>
+
+    <div class="section-label">Account</div>
+    <div class="special-row"><span>Accesso come</span><span>${authUser?authUser.email:'—'}</span></div>
+    <button class="icon-btn" onclick="logout()" type="button" style="margin:8px 0 4px;">🚪 Esci</button>
+
+    <div class="section-label">Strutture</div>
+    <div class="calendar-note" style="margin:-4px 0 10px;">ogni struttura ha turni, reparti e impostazioni propri</div>
+    ${structures.map(s=>`
+      <div class="struct-row">
+        <span class="struct-name">${s.name}${s.id===activeStructureId?' <em>(attiva)</em>':''}</span>
+        <span>
+          <button class="mini-btn" onclick="renameStructure('${s.id}')">rinomina</button>
+          ${structures.length>1?`<button class="mini-btn danger" onclick="removeStructure('${s.id}')">elimina</button>`:''}
+        </span>
+      </div>`).join('')}
+    <button class="add-type" onclick="addStructure()">+ Aggiungi struttura</button>
+
+    <div class="section-label">Reparti — ${structures.find(s=>s.id===activeStructureId)?.name || ''}</div>
+    ${departments.length ? departments.map((dp,i)=>`
+      <div class="dept-row">
+        ${renderColorPicker('dept', i, dp.color)}
+        <input type="text" value="${dp.name}" onchange="updateDepartment(${i},'name',this.value)">
+        <button class="del" onclick="removeDepartment(${i})" title="Elimina">✕</button>
+      </div>`).join('') : `<div class="calendar-note" style="margin:0 0 8px;">nessun reparto: i turni non verranno divisi</div>`}
+    <button class="add-type" onclick="addDepartment()">+ Aggiungi reparto</button>
+
+    <div class="section-label">Aspetto</div>
+    <label class="mult-toggle" style="margin-bottom:14px;">
+      <input type="checkbox" ${darkMode?'checked':''} onchange="toggleDarkMode(event)">
+      🌙 Modalità scura
+    </label>
+
+    <div class="section-label">Paga oraria (per il lordo stimato)</div>
+    <div class="pay-row">
+      <label>Paga oraria lorda (€)
+        <input type="number" step="0.01" id="hourlyRate" value="${pay.hourlyRate}">
+      </label>
+    </div>
+
+    <div class="section-label">Ferie e anzianità</div>
+    <div class="pay-row">
+      <label>Inizio in questa struttura
+        <input type="date" value="${pay.startDate || ''}" onchange="onStartDateChange(event)">
+      </label>
+      <label>Giorni di ferie al mese
+        <input type="number" step="0.5" min="0" value="${pay.vacationPerMonth ?? 0}" onchange="onVacationRateChange(event)">
+      </label>
+    </div>
+
+    <div class="section-label">Tipi di turno</div>
+    <div class="legend">${types.map(t=>`<span class="chip" style="background:${hexToSoftBg(t.color)};color:${t.color};border-color:${t.color}44;">${t.code} · ${t.hours}h</span>`).join('')}</div>
+    <div class="calendar-note" style="margin:-4px 0 10px;">il tipo con codice "F" viene sempre contato come giorno di ferie, "N" come giorno di notte</div>
+    <div id="typesList">
+      ${types.map((t,i)=>`
+        <div class="type-row" data-idx="${i}">
+          ${renderColorPicker('type', i, t.color)}
+          <input type="text" value="${t.code}" placeholder="Cod." onchange="updateType(${i},'code',this.value)">
+          <input type="text" value="${t.label}" placeholder="Etichetta" onchange="updateType(${i},'label',this.value)">
+          <input type="number" step="0.5" value="${t.hours}" onchange="updateType(${i},'hours',this.value)">
+          <button class="del" onclick="removeType(${i})" title="Elimina">✕</button>
+        </div>`).join('')}
+    </div>
+    <button class="add-type" onclick="addType()">+ Aggiungi tipo di turno</button>
+
+    <div class="section-label">Backup dati</div>
+    <div class="pay-row">
+      <button class="icon-btn" onclick="exportBackup()" type="button">📤 Esporta backup</button>
+      <label class="icon-btn" style="cursor:pointer;">
+        📥 Importa backup
+        <input type="file" accept="application/json" style="display:none;" onchange="importBackup(event)">
+      </label>
+    </div>
+
+    <div class="panel-actions">
+      <button class="btn-primary" onclick="applySettings()">Salva</button>
+    </div>
+  `;
+}
+
+function renderLogin(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="login-screen">
+      <div class="login-card">
+        <h1 class="login-title">Cartellino</h1>
+        <p class="login-sub">Accedi per continuare</p>
+        <form onsubmit="onLoginSubmit(event)">
+          <label class="login-field">Email
+            <input type="email" id="loginEmail" placeholder="nome@esempio.it" required>
+          </label>
+          <label class="login-field">Password
+            <input type="password" id="loginPassword" placeholder="••••••••" required>
+          </label>
+          <div id="loginError" class="login-error"></div>
+          <button type="submit" class="btn-primary" style="width:100%; margin-top:6px;">Accedi</button>
+          <button type="button" class="icon-btn" style="width:100%; margin-top:8px; justify-content:center;" onclick="localOnlyLogin()">Entra senza account online</button>
+        </form>
+        <p class="login-note">Accesso dimostrativo — per ora nessun dato viene verificato online.</p>
+      </div>
+    </div>
+  `;
+}
+window.onLoginSubmit = async function(e){
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  if(!email || !pass) return;
+
+  if(window.FB && window.FB.enabled){
+    const errBox = document.getElementById('loginError');
+    try{
+      await window.FB.signIn(email, pass);
+    }catch(err){
+      // se l'utente non esiste, prova a registrarlo
+      try{
+        await window.FB.signUp(email, pass);
+      }catch(err2){
+        // mostra sempre il motivo reale, cosi' i problemi si vedono
+        if(errBox){
+          errBox.innerHTML = `Accesso online non riuscito.<br><small>${err2.code || ''} ${err2.message || ''}</small>`;
+        }
+        return;
+      }
+    }
+    authUser = {email, uid: window.FB.auth.currentUser?.uid || null};
+  } else {
+    authUser = {email};
+  }
+  try{ localStorage.setItem(STORAGE_AUTH_KEY, JSON.stringify(authUser)); }catch(err){}
+  loadGroup();
+  render();
+  startRequestsListener();
+};
+window.localOnlyLogin = function(){
+  const email = document.getElementById('loginEmail').value.trim() || 'locale';
+  authUser = {email};
+  try{ localStorage.setItem(STORAGE_AUTH_KEY, JSON.stringify(authUser)); }catch(e){}
+  loadGroup();
+  render();
+};
+
+window.logout = async function(){
+  stopRequestsListener();
+  if(window.FB && window.FB.enabled){
+    try{ await window.FB.signOut(); }catch(e){}
+  }
+  authUser = null;
+  try{ localStorage.removeItem(STORAGE_AUTH_KEY); }catch(err){}
+  render();
+};
+
+function render(){
+  if(!authUser){ renderLogin(); return; }
+  const app = document.getElementById('app');
+  const isGeneral = activeStructureId === GENERAL_ID;
+  const summary = isGeneral ? null : computeSummary();
+  const nDays = daysInMonth(viewY, viewM);
+  const startOffset = firstWeekdayMon0(viewY, viewM);
+  const isToday = (d)=> d===today.getDate() && viewM===today.getMonth() && viewY===today.getFullYear();
+  const currentStructure = structures.find(s=>s.id===activeStructureId);
+  const headerTitle = isGeneral ? 'Calendario generale' : (currentStructure ? currentStructure.name : 'Cartellino');
+
+  let dayCells = '';
+  for(let i=0;i<startOffset;i++){ dayCells += `<div class="day empty"></div>`; }
+
+  if(isGeneral){
+    const generalMap = buildGeneralDayMap(viewY, viewM);
+    for(let d=1; d<=nDays; d++){
+      const items = generalMap[d] || [];
+      const longest = Math.max(0, ...items.map(x=>x.code.length));
+      const fs = items.length>=3 ? '0.96rem' : (items.length===2 && longest>1) ? '1.06rem' : '1.25rem';
+      const blocks = items.map(x=>{
+        const dot = x.deptColor ? `<span class="dept-dot" style="background:${x.deptColor};"></span>` : '';
+        const tip = `${x.label} — ${x.structureName}${x.deptName?' / '+x.deptName:''}`;
+        return `<div class="shift-block" style="background:${x.color}; font-size:${fs};" title="${tip}">${x.code}${dot}</div>`;
+      }).join('');
+      const isSunday = new Date(viewY, viewM, d).getDay()===0;
+      const holidayName = getHolidayName(viewY, viewM, d);
+      const isSpecial = isSunday || holidayName;
+      dayCells += `
+        <div class="day ${isToday(d)?'today':''} ${isSpecial?'special':''}">
+          <span class="num">${d}${isSpecial?`<span class="holiday-dot" title="${holidayName||'Domenica'}"></span>`:''}</span>
+          <div class="day-shifts-fill readonly">${blocks}</div>
+        </div>`;
+    }
+  } else {
+  for(let d=1; d<=nDays; d++){
+    const all = monthData.shifts[d] || [];
+    // indici originali conservati, cosi' la rimozione resta corretta anche con il filtro attivo
+    const assigned = all.map((e,i)=>({e,i})).filter(({e})=> deptFilter===null || e.d===deptFilter);
+    const longestCode = Math.max(0, ...assigned.map(({e})=>{ const t=typeById(e.t); return t?t.code.length:0; }));
+    const blockFontSize = assigned.length>=3 ? '0.96rem' : (assigned.length===2 && longestCode>1) ? '1.06rem' : '1.25rem';
+    const blocks = assigned.map(({e,i})=>{
+      const t = typeById(e.t);
+      if(!t) return '';
+      const dept = departments.find(x=>x.id===e.d);
+      const clickAttr = editMode ? `onclick="removeShift(${d},${i})"` : '';
+      const titleAttr = editMode ? `title="Rimuovi ${t.label}${dept?' — '+dept.name:''}"` : `title="${t.label}${dept?' — '+dept.name:''}"`;
+      const deptDot = dept ? `<span class="dept-dot" style="background:${dept.color};"></span>` : '';
+      return `<div class="shift-block" style="background:${t.color}; font-size:${blockFontSize};" ${clickAttr} ${titleAttr}>${t.code}${deptDot}</div>`;
+    }).join('');
+    const options = `<option value="">+</option>` + types.map(t=>`<option value="${t.id}">${t.code}</option>`).join('');
+    const isSunday = new Date(viewY, viewM, d).getDay()===0;
+    const holidayName = getHolidayName(viewY, viewM, d);
+    const isSpecial = isSunday || holidayName;
+    dayCells += `
+      <div class="day ${isToday(d)?'today':''} ${isSpecial?'special':''}">
+        <span class="num">${d}${isSpecial?`<span class="holiday-dot" title="${holidayName||'Domenica'}"></span>`:''}</span>
+        <div class="day-shifts-fill ${editMode?'':'readonly'}">${blocks}</div>
+        ${editMode?`<select class="add-shift" data-day="${d}" onchange="addShift(event)">${options}</select>`:''}
+      </div>`;
+  }
+  }
+
+  app.innerHTML = `
+    ${shouldShowBackupReminder() ? `
+    <div class="backup-banner">
+      <span>📦 Non fai un backup da un po'. Meglio salvarne uno.</span>
+      <div class="backup-banner-actions">
+        <button class="bb-primary" onclick="exportBackup()">Backup ora</button>
+        <button class="bb-ghost" onclick="snoozeBackup()">Più tardi</button>
+      </div>
+    </div>` : ''}
+    <div class="topbar">
+      <div class="brand">
+        <h1>${headerTitle}</h1>
+        <span class="tag">${isGeneral?'tutte le strutture':'gestione turni'}</span>
+      </div>
+    </div>
+
+    ${structures.length>1 ? `
+    <div class="structure-tabs">
+      ${structures.map(s=>`<button class="structure-tab ${s.id===activeStructureId?'active':''}" onclick="switchStructure('${s.id}')">${s.name}</button>`).join('')}
+      <button class="structure-tab ${isGeneral?'active':''}" onclick="switchStructure('${GENERAL_ID}')">📅 Calendario generale</button>
+    </div>` : ''}
+
+    ${isGeneral ? '' : `
+    <div class="panel-buttons">
+      <button class="icon-btn" onclick="openPanel('settings')">⚙ Impostazioni</button>
+      <button class="icon-btn" onclick="openPanel('stats')">📈 Statistiche</button>
+      <button class="icon-btn" onclick="openPanel('earnings')">💶 Guadagni</button>
+      <button class="icon-btn" onclick="openPanel('swap')">🔄 Scambi</button>
+    </div>`}
+
+    <div class="calendar-note"><span class="holiday-dot"></span>domenica o festivo</div>
+
+    <div class="calendar-card">
+      <div class="calendar-card-header">
+        <span class="month-nav-inline">
+          <button onclick="changeMonth(-1)" aria-label="Mese precedente">‹</button>
+          <span class="calendar-card-title">${ITALIAN_MONTHS[viewM]} ${viewY}</span>
+          <button onclick="changeMonth(1)" aria-label="Mese successivo">›</button>
+        </span>
+        ${isGeneral ? `<span class="edit-toggle" style="cursor:default;">sola lettura</span>` : `<button class="edit-toggle ${editMode?'active':''}" onclick="toggleEditMode()">${editMode?'🔓 Modifica attiva':'🔒 Modifica turni'}</button>`}
+      </div>
+      <div class="weekdays">${ITALIAN_WEEKDAYS.map(w=>`<span>${w}</span>`).join('')}</div>
+      <div class="days">${dayCells}</div>
+      ${(!isGeneral && departments.length) ? `
+      <div class="dept-filter">
+        <button class="dept-chip ${deptFilter===null?'active':''}" onclick="setDeptFilter(null)">Tutti</button>
+        ${departments.map(dp=>`<button class="dept-chip ${deptFilter===dp.id?'active':''}" onclick="setDeptFilter('${dp.id}')"><span class="dept-dot" style="background:${dp.color};"></span>${dp.name}</button>`).join('')}
+      </div>
+      ${editMode&&deptFilter!==null?`<div class="calendar-note" style="margin-top:8px;">i nuovi turni verranno assegnati al reparto selezionato</div>`:''}` : ''}
+    </div>
+
+    ${activePanel ? `
+    <div class="overlay">
+      <div class="panel">
+        <button class="close" onclick="closePanel()">×</button>
+        ${activePanel==='settings' ? renderSettingsPanel() : ''}
+        ${activePanel==='stats' ? renderStatsPanel() : ''}
+        ${activePanel==='earnings' ? renderEarningsPanel(summary) : ''}
+        ${activePanel==='swap' ? renderSwapPanel() : ''}
+      </div>
+    </div>` : ''}
+  `;
+
+}
+
+// Controlla se lo stesso turno e' gia' inserito in un'altra struttura in quel giorno.
+function findConflictInOtherStructures(day, typeId){
+  const t = typeById(typeId);
+  if(!t) return null;
+  const code = (t.code||'').trim().toUpperCase();
+  for(const s of structures){
+    if(s.id === activeStructureId) continue;
+    try{
+      const raw = localStorage.getItem(monthKeyFor(s.id, viewY, viewM));
+      if(!raw) continue;
+      const other = normalizeMonthData(JSON.parse(raw));
+      const list = other.shifts[day] || [];
+      // i tipi turno sono definiti per struttura: confrontiamo per codice, non per id
+      let otherTypes = [];
+      try{
+        const ot = localStorage.getItem(typesKey(s.id));
+        otherTypes = ot ? JSON.parse(ot) : DEFAULT_TYPES;
+      }catch(err){ otherTypes = DEFAULT_TYPES; }
+      const match = list.some(entry=>{
+        const ot = otherTypes.find(x=>x.id===entry.t);
+        return ot && (ot.code||'').trim().toUpperCase() === code;
+      });
+      if(match) return {structureName: s.name, code};
+    }catch(err){}
+  }
+  return null;
+}
+
+// Aggiorna solo il contenuto del pannello aperto: il contenitore che scorre
+// resta lo stesso, quindi la posizione di scorrimento non si perde.
+function renderPanelBody(){
+  const panel = document.querySelector('.panel');
+  if(!panel || !activePanel){ render(); return; }
+  const summary = activeStructureId === GENERAL_ID ? null : computeSummary();
+  panel.innerHTML = `
+    <button class="close" onclick="closePanel()">×</button>
+    ${activePanel==='settings' ? renderSettingsPanel() : ''}
+    ${activePanel==='stats' ? renderStatsPanel() : ''}
+    ${activePanel==='earnings' ? renderEarningsPanel(summary) : ''}
+    ${activePanel==='swap' ? renderSwapPanel() : ''}
+  `;
+}
+
+window.addShift = async function(e){
+  const day = Number(e.target.dataset.day);
+  const val = e.target.value;
+  if(!val) return;
+
+  const conflict = findConflictInOtherStructures(day, val);
+  if(conflict){
+    const ok = confirm(`Attenzione: il giorno ${day} hai gia' un turno "${conflict.code}" in "${conflict.structureName}".\n\nControlla l'altra struttura prima di continuare.\n\nVuoi aggiungerlo lo stesso?`);
+    if(!ok){ render(); return; }
+  }
+
+  if(!monthData.shifts[day]) monthData.shifts[day] = [];
+  monthData.shifts[day].push({t:val, d:deptFilter});
+  await saveMonth(viewY, viewM);
+  render();
+};
+
+window.removeShift = async function(day, idx){
+  if(!editMode) return;
+  if(monthData.shifts[day]){
+    monthData.shifts[day].splice(idx,1);
+    if(monthData.shifts[day].length===0) delete monthData.shifts[day];
+  }
+  await saveMonth(viewY, viewM);
+  render();
+};
+
+window.switchStructure = async function(sid){
+  if(sid === GENERAL_ID){
+    activeStructureId = GENERAL_ID;
+    deptFilter = null;
+    editMode = false;
+    activePanel = null;
+    render();
+    return;
+  }
+  activeStructureId = sid;
+  deptFilter = null;
+  await loadSettings();
+  await loadMonth(viewY, viewM);
+  render();
+};
+window.setDeptFilter = function(id){
+  deptFilter = id;
+  render();
+};
+window.addStructure = async function(){
+  const name = prompt('Nome della nuova struttura:');
+  if(!name || !name.trim()) return;
+  const sid = 's' + Date.now();
+  structures.push({id:sid, name:name.trim()});
+  saveStructures();
+  activeStructureId = sid;
+  deptFilter = null;
+  await loadSettings();
+  await loadMonth(viewY, viewM);
+  render();
+};
+window.renameStructure = function(sid){
+  const s = structures.find(x=>x.id===sid);
+  if(!s) return;
+  const name = prompt('Nuovo nome:', s.name);
+  if(!name || !name.trim()) return;
+  s.name = name.trim();
+  saveStructures();
+  render();
+};
+window.removeStructure = async function(sid){
+  if(structures.length<=1){ alert('Deve restare almeno una struttura.'); return; }
+  const s = structures.find(x=>x.id===sid);
+  if(!s) return;
+  if(!confirm(`Eliminare "${s.name}" e tutti i suoi turni? L'operazione non si puo' annullare.`)) return;
+  try{
+    localStorage.removeItem(typesKey(sid));
+    localStorage.removeItem(payKey(sid));
+    localStorage.removeItem(deptsKey(sid));
+    const toRemove = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith(`month:${sid}:`)) toRemove.push(k);
+    }
+    toRemove.forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
+  structures = structures.filter(x=>x.id!==sid);
+  saveStructures();
+  activeStructureId = structures[0].id;
+  deptFilter = null;
+  await loadSettings();
+  await loadMonth(viewY, viewM);
+  render();
+};
+
+window.addDepartment = function(){
+  const name = prompt('Nome del reparto:');
+  if(!name || !name.trim()) return;
+  const palette = ['#3E7C6B','#D98E3D','#B85450','#5C7FA6','#7A5C9E','#4A8C5F'];
+  departments.push({id:'d'+Date.now(), name:name.trim(), color:palette[departments.length % palette.length]});
+  saveDepartments();
+  renderPanelBody();
+};
+window.updateDepartment = function(idx, field, value){
+  if(!departments[idx]) return;
+  departments[idx][field] = value;
+  saveDepartments();
+  renderPanelBody();
+};
+window.removeDepartment = function(idx){
+  const dp = departments[idx];
+  if(!dp) return;
+  if(!confirm(`Eliminare il reparto "${dp.name}"? I turni gia' inseriti resteranno, ma senza reparto.`)) return;
+  departments.splice(idx,1);
+  saveDepartments();
+  if(deptFilter===dp.id) deptFilter = null;
+  renderPanelBody();
+};
+
+window.toggleEditMode = function(){
+  editMode = !editMode;
+  render();
+};
+
+window.onStartDateChange = async function(e){
+  pay.startDate = e.target.value || null;
+  await saveSettings();
+  renderPanelBody();
+};
+window.onVacationRateChange = async function(e){
+  const n = Number(e.target.value);
+  pay.vacationPerMonth = isNaN(n) ? 0 : n;
+  await saveSettings();
+  renderPanelBody();
+};
+
+window.changeTaxPercent = async function(){
+  const cur = (pay.taxPercent===null||pay.taxPercent===undefined) ? 18 : pay.taxPercent;
+  const v = prompt('Percentuale di tasse da sottrarre al totale lordo:', cur);
+  if(v===null) return;
+  const n = Number(String(v).replace(',','.'));
+  if(isNaN(n) || n<0 || n>100){ alert('Inserisci un numero tra 0 e 100.'); return; }
+  pay.taxPercent = n;
+  await saveSettings();
+  renderPanelBody();
+};
+
+
+window.onNetChange = async function(e){
+  const v = e.target.value;
+  monthData.net = (v===''? null : Number(v));
+  await saveMonth(viewY, viewM);
+  renderPanelBody();
+};
+
+window.onMultChange = async function(e){
+  const cat = e.target.dataset.cat;
+  const field = e.target.dataset.field;
+  const v = e.target.value;
+  pay.multipliers[cat][field] = v===''?null:Number(v);
+  await saveSettings();
+  renderPanelBody();
+};
+window.onMultToggle = async function(e){
+  const cat = e.target.dataset.cat;
+  pay.multipliers[cat].useM2 = e.target.checked;
+  await saveSettings();
+  renderPanelBody();
+};
+window.setMult = async function(cat, field, val){
+  pay.multipliers[cat][field] = val;
+  await saveSettings();
+  renderPanelBody();
+};
+
+window.toggleSuggestions = function(key){
+  if(openSuggestionKeys.has(key)) openSuggestionKeys.delete(key); else openSuggestionKeys.add(key);
+  renderPanelBody();
+};
+
+window.toggleYearSection = function(year){
+  const openKey = 'year:' + year;
+  const closedKey = 'closed:' + year;
+  const isDefaultOpen = (year === viewY);
+  const isOpen = openEarningsSections.has(openKey) ||
+                 (isDefaultOpen && !openEarningsSections.has(closedKey));
+  if(isOpen){
+    openEarningsSections.delete(openKey);
+    if(isDefaultOpen) openEarningsSections.add(closedKey);
+  } else {
+    openEarningsSections.add(openKey);
+    openEarningsSections.delete(closedKey);
+  }
+  renderPanelBody();
+};
+
+window.toggleEarningsSection = function(key){
+  if(openEarningsSections.has(key)) openEarningsSections.delete(key); else openEarningsSections.add(key);
+  renderPanelBody();
+};
+
+window.onThresholdChange = async function(e){
+  const v = e.target.value;
+  monthData.overtimeThreshold = v===''?null:Number(v);
+  await saveMonth(viewY, viewM);
+  renderPanelBody();
+};
+window.setThreshold = async function(val){
+  monthData.overtimeThreshold = val;
+  await saveMonth(viewY, viewM);
+  renderPanelBody();
+};
+
+window.toggleDarkMode = async function(e){
+  darkMode = e.target.checked;
+  try{ localStorage.setItem(STORAGE_DARKMODE_KEY, darkMode ? '1' : '0'); }catch(err){}
+  applyDarkModeClass();
+};
+
+window.changeMonth = async function(delta){
+  viewM += delta;
+  if(viewM<0){ viewM=11; viewY--; }
+  if(viewM>11){ viewM=0; viewY++; }
+  if(activeStructureId !== GENERAL_ID) await loadMonth(viewY, viewM);
+  render();
+};
+
+window.openPanel = function(name){
+  activePanel = name;
+  render();
+};
+window.closePanel = function(){
+  activePanel = null;
+  render();
+};
+
+let draftTypes = null;
+window.toggleColorPicker = function(key){
+  openColorPicker = (openColorPicker === key) ? null : key;
+  renderPanelBody();
+};
+window.pickColor = async function(kind, idx, hex){
+  openColorPicker = null;
+  rememberCustomColor(hex);
+  if(kind === 'type'){ await updateTypeColor(idx, hex); }
+  else { updateDepartment(idx, 'color', hex); }
+};
+window.pickCustomColor = async function(kind, idx, hex){
+  openColorPicker = null;
+  rememberCustomColor(hex);
+  if(kind === 'type'){ await updateTypeColor(idx, hex); }
+  else { updateDepartment(idx, 'color', hex); }
+};
+
+window.updateTypeColor = async function(idx, value){
+  if(!draftTypes) draftTypes = JSON.parse(JSON.stringify(types));
+  draftTypes[idx].color = value;
+  types = draftTypes;
+  await saveSettings();
+  renderPanelBody();
+};
+
+window.updateType = function(idx, field, value){
+  if(!draftTypes) draftTypes = JSON.parse(JSON.stringify(types));
+  draftTypes[idx][field] = (field==='hours') ? Number(value) : value;
+};
+window.addType = function(){
+  if(!draftTypes) draftTypes = JSON.parse(JSON.stringify(types));
+  draftTypes.push({id:'T'+Date.now(), code:'', label:'', hours:0, color:'#5C7FA6'});
+  types = draftTypes;
+  render();
+};
+window.removeType = function(idx){
+  if(!draftTypes) draftTypes = JSON.parse(JSON.stringify(types));
+  draftTypes.splice(idx,1);
+  types = draftTypes;
+  render();
+};
+
+window.applySettings = async function(){
+  if(draftTypes) types = draftTypes;
+  pay.hourlyRate = Number(document.getElementById('hourlyRate').value)||0;
+  draftTypes = null;
+  await saveSettings();
+  closePanel();
+  render();
+};
+
+// Usata dall'app Flutter per sapere i turni di domani e programmare la notifica.
+window.getTomorrowShifts = function(){
+  const t = new Date();
+  t.setDate(t.getDate()+1);
+  const y = t.getFullYear(), m = t.getMonth(), d = t.getDate();
+  const out = [];
+  try{
+    const sList = JSON.parse(localStorage.getItem(STORAGE_STRUCTURES_KEY) || '[]');
+    sList.forEach(s=>{
+      let sTypes = DEFAULT_TYPES;
+      try{ const tt = localStorage.getItem(`shift-types:${s.id}`); if(tt) sTypes = JSON.parse(tt); }catch(e){}
+      let raw = localStorage.getItem(`month:${s.id}:${y}-${String(m+1).padStart(2,'0')}`);
+      if(!raw) return;
+      const md = normalizeMonthData(JSON.parse(raw));
+      (md.shifts[d]||[]).forEach(entry=>{
+        const ty = sTypes.find(x=>x.id===entry.t);
+        if(ty) out.push(sList.length>1 ? `${ty.label} (${s.name})` : ty.label);
+      });
+    });
+  }catch(e){}
+  return JSON.stringify(out);
+};
+
+
+// ==================== SCAMBIO TURNI (online) ====================
+
+function loadGroup(){
+  try{
+    const g = JSON.parse(localStorage.getItem(STORAGE_GROUP_KEY) || 'null');
+    if(g){ groupCode = g.code || null; displayName = g.name || ''; }
+  }catch(e){ groupCode = null; displayName = ''; }
+}
+function saveGroup(){
+  try{ localStorage.setItem(STORAGE_GROUP_KEY, JSON.stringify({code:groupCode, name:displayName})); }catch(e){}
+}
+
+function onlineReady(){
+  return window.FB && window.FB.enabled && authUser && authUser.uid && groupCode;
+}
+
+function stopRequestsListener(){
+  if(requestsUnsub){ try{ requestsUnsub(); }catch(e){} requestsUnsub = null; }
+  openRequests = [];
+}
+
+function startRequestsListener(){
+  stopRequestsListener();
+  if(!onlineReady()) return;
+  const FB = window.FB;
+  try{
+    const q = FB.query(
+      FB.collection(FB.db, 'groups', groupCode, 'requests'),
+      FB.orderBy('date')
+    );
+    requestsUnsub = FB.onSnapshot(q, (snap)=>{
+      openRequests = [];
+      snap.forEach(d=>openRequests.push({id:d.id, ...d.data()}));
+      if(activePanel === 'swap') renderPanelBody();
+    }, (err)=>console.error('Ascolto richieste non riuscito', err));
+  }catch(e){ console.error(e); }
+}
+
+window.joinGroup = async function(){
+  const code = prompt('Codice del gruppo di lavoro (chiedilo a un collega, oppure inventane uno nuovo per crearlo):');
+  if(!code || !code.trim()) return;
+  const name = prompt('Come vuoi farti chiamare dai colleghi?', displayName || (authUser?authUser.email.split('@')[0]:''));
+  if(!name || !name.trim()) return;
+  groupCode = code.trim().toLowerCase();
+  displayName = name.trim();
+  saveGroup();
+  startRequestsListener();
+  renderPanelBody();
+};
+
+window.leaveGroup = function(){
+  if(!confirm('Uscire dal gruppo? Le tue richieste gia inviate restano visibili ai colleghi.')) return;
+  stopRequestsListener();
+  groupCode = null;
+  saveGroup();
+  renderPanelBody();
+};
+
+window.createSwapRequest = async function(){
+  if(!onlineReady()){ alert('Devi prima entrare in un gruppo.'); return; }
+  const dateStr = document.getElementById('swapDate')?.value;
+  const shift = document.getElementById('swapShift')?.value.trim();
+  const note = document.getElementById('swapNote')?.value.trim();
+  if(!dateStr){ alert('Scegli il giorno del turno.'); return; }
+  if(!shift){ alert('Indica quale turno (es. P, M, N).'); return; }
+  onlineBusy = true; renderPanelBody();
+  try{
+    const FB = window.FB;
+    await FB.addDoc(FB.collection(FB.db, 'groups', groupCode, 'requests'), {
+      fromUid: authUser.uid,
+      fromName: displayName,
+      date: dateStr,
+      shiftCode: shift.toUpperCase(),
+      note: note || '',
+      status: 'open',
+      takenBy: null,
+      takenByName: null,
+      createdAt: FB.serverTimestamp()
+    });
+  }catch(e){ alert('Invio non riuscito: ' + e.message); }
+  onlineBusy = false;
+  renderPanelBody();
+};
+
+window.acceptSwapRequest = async function(id){
+  if(!onlineReady()) return;
+  if(!confirm('Confermi di prenderti questo turno?')) return;
+  onlineBusy = true; renderPanelBody();
+  try{
+    const FB = window.FB;
+    await FB.updateDoc(FB.doc(FB.db, 'groups', groupCode, 'requests', id), {
+      status: 'taken',
+      takenBy: authUser.uid,
+      takenByName: displayName
+    });
+  }catch(e){ alert('Operazione non riuscita: ' + e.message); }
+  onlineBusy = false;
+  renderPanelBody();
+};
+
+window.cancelSwapRequest = async function(id){
+  if(!onlineReady()) return;
+  if(!confirm('Eliminare questa richiesta?')) return;
+  try{
+    const FB = window.FB;
+    await FB.deleteDoc(FB.doc(FB.db, 'groups', groupCode, 'requests', id));
+  }catch(e){ alert('Eliminazione non riuscita: ' + e.message); }
+  renderPanelBody();
+};
+
+function fmtDateIt(iso){
+  try{
+    const [y,m,d] = iso.split('-').map(Number);
+    return `${d} ${ITALIAN_MONTHS_SHORT[m-1]} ${y}`;
+  }catch(e){ return iso; }
+}
+
+function renderSwapPanel(){
+  if(!window.FB || !window.FB.enabled){
+    return `
+      <h2>Scambio turni</h2>
+      <p style="font-size:0.85rem; color:var(--ink-soft);">
+        La parte online non e' ancora configurata. Serve un progetto Firebase gratuito:
+        una volta creato, incolla i dati nella sezione in cima al file dell'app.
+      </p>`;
+  }
+  if(!authUser || !authUser.uid){
+    return `
+      <h2>Scambio turni</h2>
+      <p style="font-size:0.85rem; color:var(--ink-soft);">
+        Per usare lo scambio turni devi accedere con un account online. Esci e rientra con email e password.
+      </p>`;
+  }
+  if(!groupCode){
+    return `
+      <h2>Scambio turni</h2>
+      <p style="font-size:0.85rem; color:var(--ink-soft);">
+        Entra nel gruppo dei tuoi colleghi con un codice condiviso. Chi lo usa per primo lo crea,
+        gli altri usano lo stesso codice per unirsi.
+      </p>
+      <button class="btn-primary" onclick="joinGroup()">Entra in un gruppo</button>`;
+  }
+
+  const mine = openRequests.filter(r=>r.fromUid === authUser.uid);
+  const others = openRequests.filter(r=>r.fromUid !== authUser.uid);
+
+  const card = (r, isMine)=>`
+    <div class="swap-card ${r.status==='taken'?'taken':''}">
+      <div class="swap-card-head">
+        <span class="swap-shift">${r.shiftCode}</span>
+        <span class="swap-date">${fmtDateIt(r.date)}</span>
+      </div>
+      <div class="swap-meta">${isMine?'la tua richiesta':'da '+(r.fromName||'collega')}</div>
+      ${r.note?`<div class="swap-note">"${r.note}"</div>`:''}
+      ${r.status==='taken'
+        ? `<div class="swap-status">✅ preso da ${r.takenByName||'un collega'}</div>`
+        : (isMine
+            ? `<button class="mini-btn danger" onclick="cancelSwapRequest('${r.id}')">annulla richiesta</button>`
+            : `<button class="btn-primary" style="padding:6px 14px; font-size:0.8rem;" onclick="acceptSwapRequest('${r.id}')">Lo prendo io</button>`)}
+    </div>`;
+
+  return `
+    <h2>Scambio turni</h2>
+    <div class="special-row"><span>Gruppo</span><span>${groupCode}</span></div>
+    <div class="special-row"><span>Il tuo nome</span><span>${displayName}</span></div>
+    <button class="mini-btn" onclick="joinGroup()">cambia gruppo</button>
+    <button class="mini-btn danger" onclick="leaveGroup()">esci dal gruppo</button>
+
+    <div class="section-label">Chiedi che qualcuno prenda un tuo turno</div>
+    <div class="pay-row">
+      <label>Giorno<input type="date" id="swapDate"></label>
+      <label>Turno<input type="text" id="swapShift" placeholder="es. P" maxlength="4"></label>
+    </div>
+    <div class="pay-row">
+      <label>Nota (facoltativa)<input type="text" id="swapNote" placeholder="es. ho una visita"></label>
+    </div>
+    <button class="btn-primary" onclick="createSwapRequest()" ${onlineBusy?'disabled':''}>
+      ${onlineBusy?'Invio...':'Invia richiesta'}
+    </button>
+
+    <div class="section-label">Richieste dei colleghi</div>
+    ${others.length ? others.map(r=>card(r,false)).join('') : `<div class="calendar-note">nessuna richiesta al momento</div>`}
+
+    <div class="section-label">Le tue richieste</div>
+    ${mine.length ? mine.map(r=>card(r,true)).join('') : `<div class="calendar-note">non hai richieste attive</div>`}
+  `;
+}
+
+(async function init(){
+  if(!localStorage.getItem(STORAGE_FIRSTUSE_KEY)){
+    localStorage.setItem(STORAGE_FIRSTUSE_KEY, new Date().toISOString());
+  }
+  migrateLegacyData();
+  loadStructures();
+  loadCustomColors();
+  loadGroup();
+  if(window.FB_READY) { try{ await window.FB_READY; }catch(e){} }
+  await loadSettings();
+  await loadMonth(viewY, viewM);
+
+  // se Firebase e' attivo, allinea lo stato all'utente realmente autenticato
+  if(window.FB && window.FB.enabled){
+    window.FB.onAuth((u)=>{
+      if(u){
+        // account online presente: abilita anche lo scambio turni
+        authUser = {email:u.email, uid:u.uid};
+        try{ localStorage.setItem(STORAGE_AUTH_KEY, JSON.stringify(authUser)); }catch(e){}
+        startRequestsListener();
+      } else {
+        // nessun account online: NON si esce dall'app.
+        // Chi usa l'app solo in locale continua a entrare come prima,
+        // semplicemente senza la parte di scambio turni.
+        if(authUser) authUser = {email: authUser.email};
+        stopRequestsListener();
+      }
+      render();
+    });
+  }
+
+  render();
+  startRequestsListener();
+})();
+</script>
+</body>
+</html>
