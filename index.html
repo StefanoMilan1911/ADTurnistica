@@ -1921,11 +1921,11 @@ function renderSettingsPanel(){
     <h2>Impostazioni</h2>
 
     <div class="section-label">Account</div>
-    <div class="special-row"><span>Accesso come</span><span>${authUser?authUser.email:'—'}</span></div>
+    <div class="special-row"><span>Utente</span><span>${authUser?authUser.email:'—'}</span></div>
     <button class="icon-btn" onclick="logout()" type="button" style="margin:8px 0 4px;">🚪 Esci</button>
 
     <div class="section-label">Strutture</div>
-    <div class="calendar-note" style="margin:-4px 0 10px;">ogni struttura ha turni, reparti e impostazioni propri</div>
+    <div class="calendar-note" style="margin:-4px 0 10px;">Ogni struttura ha turni, reparti e impostazioni propri</div>
     ${structures.map(s=>`
       <div class="struct-row">
         <span class="struct-name">${s.name}${s.id===activeStructureId?' <em>(attiva)</em>':''}</span>
@@ -1958,7 +1958,7 @@ function renderSettingsPanel(){
       </label>
     </div>
 
-    <div class="section-label">Ferie e anzianità</div>
+    <div class="section-label">Ferie</div>
     <div class="pay-row">
       <label>Inizio in questa struttura
         <input type="date" value="${pay.startDate || ''}" onchange="onStartDateChange(event)">
@@ -2016,7 +2016,6 @@ function renderLogin(){
           <button type="submit" class="btn-primary" style="width:100%; margin-top:6px;">Accedi</button>
           <button type="button" class="icon-btn" style="width:100%; margin-top:8px; justify-content:center;" onclick="localOnlyLogin()">Entra senza account online</button>
         </form>
-        <p class="login-note">Accesso dimostrativo — per ora nessun dato viene verificato online.</p>
       </div>
     </div>
   `;
