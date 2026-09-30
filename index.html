@@ -834,6 +834,17 @@ body{
 }
 .color-custom-btn input{display:none;}
 
+.link-btn{
+  background:none;
+  border:none;
+  padding:0;
+  margin-top:4px;
+  color:var(--amber);
+  font-family:inherit;
+  font-size:0.78rem;
+  text-decoration:underline;
+  cursor:pointer;
+}
 .login-error{
   color:var(--rust);
   font-size:0.75rem;
@@ -1019,8 +1030,8 @@ body.dark{
 // Supabase -> il tuo progetto -> Settings -> API
 // Finche' SUPABASE_URL resta "INCOLLA_QUI", la parte online resta spenta
 // e l'app funziona normalmente in locale.
-const SUPABASE_URL = "https://igadnxzdfaecjgpoyixb.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnYWRueHpkZmFlY2pncG95aXhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3ODQzNTYsImV4cCI6MjEwNjM2MDM1Nn0.57qoaKTCWL6FTdcEOHPkk4sZGHu5mjgyBCIFrt4y9Vg";
+const SUPABASE_URL = "INCOLLA_QUI";
+const SUPABASE_ANON_KEY = "INCOLLA_QUI";
 // =================================================
 
 window.SB = { enabled: false };
@@ -2014,6 +2025,14 @@ window.onLoginSubmit = async function(e){
       // account non esistente: prova a registrarlo
       const res = await sb.auth.signUp({email, password: pass});
       if(res.error){
+        const msg = (res.error.message || '').toLowerCase();
+        // l'account esiste gia': quindi la password digitata e' sbagliata
+        if(msg.includes('already registered') || msg.includes('already been registered') || msg.includes('user already')){
+          if(errBox) errBox.innerHTML =
+            `Password errata per questo indirizzo.<br>
+             <button type="button" class="link-btn" onclick="sendPasswordReset()">Hai dimenticato la password?</button>`;
+          return;
+        }
         if(errBox) errBox.innerHTML = `Accesso non riuscito.<br><small>${res.error.message}</small>`;
         return;
       }
@@ -2033,6 +2052,33 @@ window.onLoginSubmit = async function(e){
   render();
   startRequestsListener();
 };
+window.sendPasswordReset = async function(){
+  const errBox = document.getElementById('loginError');
+  const email = document.getElementById('loginEmail').value.trim();
+  if(!email){ if(errBox) errBox.textContent = 'Scrivi prima il tuo indirizzo email.'; return; }
+  if(!(window.SB && window.SB.enabled)){ if(errBox) errBox.textContent = 'Servizio non raggiungibile.'; return; }
+  try{
+    const { error } = await window.SB.client.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+    if(error){ if(errBox) errBox.innerHTML = `<small>${error.message}</small>`; return; }
+    if(errBox) errBox.innerHTML = 'Ti abbiamo inviato una mail: apri il link per scegliere una nuova password.';
+  }catch(e){
+    if(errBox) errBox.innerHTML = `<small>${e.message}</small>`;
+  }
+};
+
+// Chiede la nuova password quando si torna dal link ricevuto per mail.
+async function handlePasswordRecovery(){
+  const nuova = prompt('Scegli una nuova password (almeno 6 caratteri):');
+  if(!nuova || nuova.length < 6){ alert('Password troppo corta, riprova dal link nella mail.'); return; }
+  try{
+    const { error } = await window.SB.client.auth.updateUser({password: nuova});
+    if(error){ alert('Non riuscito: ' + error.message); return; }
+    alert('Password aggiornata.');
+  }catch(e){ alert('Non riuscito: ' + e.message); }
+}
+
 window.localOnlyLogin = function(){
   const email = document.getElementById('loginEmail').value.trim() || 'locale';
   authUser = {email};
@@ -2775,6 +2821,7 @@ function renderSwapPanel(){
     }catch(e){}
 
     window.SB.client.auth.onAuthStateChange((event, session)=>{
+      if(event === 'PASSWORD_RECOVERY'){ handlePasswordRecovery(); }
       if(session){
         authUser = {email: session.user.email, uid: session.user.id};
         try{ localStorage.setItem(STORAGE_AUTH_KEY, JSON.stringify(authUser)); }catch(e){}
