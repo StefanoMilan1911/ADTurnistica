@@ -110,7 +110,7 @@ body{
 
 .panel-buttons{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(3,1fr);
   gap:8px;
   margin-bottom:16px;
 }
@@ -809,7 +809,7 @@ body{
 }
 .color-grid{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(3,1fr);
   gap:6px;
 }
 .color-cell{
@@ -1007,6 +1007,68 @@ body{
   color:var(--ink-soft);
   font-family:'IBM Plex Mono', monospace;
 }
+
+.pill{
+  display:inline-block;
+  font-size:0.68rem;
+  font-weight:600;
+  padding:2px 9px;
+  border-radius:999px;
+  white-space:nowrap;
+}
+.pill.ok{background:var(--teal-soft); color:var(--teal);}
+.pill.no{background:var(--rust-soft); color:var(--rust);}
+.pill.wait{background:var(--amber-soft); color:var(--amber);}
+.pill.warn{background:var(--rust-soft); color:var(--rust);}
+.pill.good{background:var(--teal-soft); color:var(--teal);}
+select.mult-input{
+  background:var(--paper-raised);
+  color:var(--ink);
+}
+
+.dialog-overlay{
+  position:fixed; inset:0;
+  background:rgba(28,43,57,0.55);
+  display:flex; align-items:center; justify-content:center;
+  padding:24px; z-index:200;
+}
+.dialog-card{
+  background:var(--paper-raised);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:22px;
+  max-width:360px; width:100%;
+  box-shadow:0 10px 40px rgba(0,0,0,0.25);
+}
+.dialog-title{
+  font-family:'Space Grotesk', sans-serif;
+  font-weight:700; font-size:1.02rem;
+  margin-bottom:8px;
+}
+.dialog-msg{
+  font-size:0.9rem; line-height:1.5;
+  color:var(--ink); white-space:pre-line;
+}
+.dialog-input{
+  width:100%; margin-top:14px;
+  border:1px solid var(--line); border-radius:8px;
+  padding:9px 11px; font-size:0.9rem;
+  font-family:'IBM Plex Sans', sans-serif;
+  color:var(--ink); background:var(--paper);
+}
+.dialog-actions{
+  display:flex; gap:8px; justify-content:flex-end;
+  margin-top:18px;
+}
+.dialog-btn{
+  border:none; border-radius:8px;
+  padding:9px 16px; font-size:0.86rem;
+  font-family:'IBM Plex Sans', sans-serif;
+  cursor:pointer; font-weight:500;
+}
+.dialog-btn.primary{background:var(--ink); color:var(--paper);}
+.dialog-btn.danger{background:var(--rust); color:#fff;}
+.dialog-btn.ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--line);}
 
 body.dark{
   --ink:#E8ECEE;
@@ -1437,11 +1499,11 @@ function importBackup(event){
       Object.entries(data).forEach(([k,v])=>localStorage.setItem(k,v));
       await loadSettings();
       await loadMonth(viewY, viewM);
-      alert('Backup importato con successo.');
+      await appAlert('Backup importato con successo.');
       closePanel();
       render();
     }catch(err){
-      alert('File di backup non valido.');
+      await appAlert('File di backup non valido.');
     }
   };
   reader.readAsText(file);
@@ -1923,7 +1985,7 @@ function renderSettingsPanel(){
     <h2>Impostazioni</h2>
 
     <div class="section-label">Account</div>
-    <div style="margin-bottom:10px;"><div class="section-label" style="margin:0 0 2px;">Utente</div><div style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;word-break:break-all;">${authUser?authUser.email:'—'}</div></div>    <button class="icon-btn" onclick="logout()" type="button" style="margin:8px 0 4px;">🚪 Esci</button>  
+    <div style="margin-bottom:10px;"><div class="section-label" style="margin:0 0 2px;">Utente</div><div style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;word-break:break-all;">${authUser?authUser.email:'—'}</div></div>    <button class="icon-btn" onclick="logout()" type="button" style="margin:8px 0 4px;">🚪 Esci</button>    <button class="icon-btn" onclick="logout()" type="button" style="margin:8px 0 4px;">🚪 Esci</button>
 
     <div class="section-label">Sincronizzazione</div>
     ${syncReady() ? `
@@ -1976,7 +2038,7 @@ function renderSettingsPanel(){
       </label>
     </div>
 
-    <div class="section-label">Ferie</div>
+    <div class="section-label">Ferie e anzianità</div>
     <div class="pay-row">
       <label>Inizio in questa struttura
         <input type="date" value="${pay.startDate || ''}" onchange="onStartDateChange(event)">
@@ -2134,7 +2196,7 @@ window.submitNewPassword = async function(e){
   passwordResetMode = false;
   // toglie ?reset=1 dall'indirizzo, cosi' un ricaricamento non riapre la schermata
   try{ history.replaceState(null, '', window.location.pathname); }catch(e){}
-  alert('Password aggiornata.');
+  await appAlert('Password aggiornata.');
   render();
 };
 
@@ -2248,6 +2310,7 @@ function render(){
       <button class="icon-btn" onclick="openPanel('stats')">📈 Statistiche</button>
       <button class="icon-btn" onclick="openPanel('earnings')">💶 Guadagni</button>
       <button class="icon-btn" onclick="openPanel('swap')">🔄 Scambi</button>
+      <button class="icon-btn" onclick="openPanel('avail')">📋 Disponibilità</button>
     </div>`}
 
     <div class="calendar-note"><span class="holiday-dot"></span>domenica o festivo</div>
@@ -2279,6 +2342,7 @@ function render(){
         ${activePanel==='stats' ? renderStatsPanel() : ''}
         ${activePanel==='earnings' ? renderEarningsPanel(summary) : ''}
         ${activePanel==='swap' ? renderSwapPanel() : ''}
+        ${activePanel==='avail' ? renderAvailPanel() : ''}
       </div>
     </div>` : ''}
   `;
@@ -2325,6 +2389,7 @@ function renderPanelBody(){
     ${activePanel==='stats' ? renderStatsPanel() : ''}
     ${activePanel==='earnings' ? renderEarningsPanel(summary) : ''}
     ${activePanel==='swap' ? renderSwapPanel() : ''}
+    ${activePanel==='avail' ? renderAvailPanel() : ''}
   `;
 }
 
@@ -2335,7 +2400,7 @@ window.addShift = async function(e){
 
   const conflict = findConflictInOtherStructures(day, val);
   if(conflict){
-    const ok = confirm(`Attenzione: il giorno ${day} hai gia' un turno "${conflict.code}" in "${conflict.structureName}".\n\nControlla l'altra struttura prima di continuare.\n\nVuoi aggiungerlo lo stesso?`);
+    const ok = await appConfirm(`Il giorno ${day} hai gia' un turno "${conflict.code}" in "${conflict.structureName}".\n\nVuoi aggiungerlo lo stesso?`, {title:'Turno gia\' presente', okLabel:'Aggiungi comunque'});
     if(!ok){ render(); return; }
   }
 
@@ -2375,7 +2440,7 @@ window.setDeptFilter = function(id){
   render();
 };
 window.addStructure = async function(){
-  const name = prompt('Nome della nuova struttura:');
+  const name = await appPrompt('Come si chiama la nuova struttura?');
   if(!name || !name.trim()) return;
   const sid = 's' + Date.now();
   structures.push({id:sid, name:name.trim()});
@@ -2386,20 +2451,20 @@ window.addStructure = async function(){
   await loadMonth(viewY, viewM);
   render();
 };
-window.renameStructure = function(sid){
+window.renameStructure = async function(sid){
   const s = structures.find(x=>x.id===sid);
   if(!s) return;
-  const name = prompt('Nuovo nome:', s.name);
+  const name = await appPrompt('Nuovo nome della struttura:', s.name);
   if(!name || !name.trim()) return;
   s.name = name.trim();
   saveStructures();
   render();
 };
 window.removeStructure = async function(sid){
-  if(structures.length<=1){ alert('Deve restare almeno una struttura.'); return; }
+  if(structures.length<=1){ await appAlert('Deve restare almeno una struttura.'); return; }
   const s = structures.find(x=>x.id===sid);
   if(!s) return;
-  if(!confirm(`Eliminare "${s.name}" e tutti i suoi turni? L'operazione non si puo' annullare.`)) return;
+  if(!await appConfirm(`Verranno eliminati "${s.name}" e tutti i suoi turni. L'operazione non si puo' annullare.`, {title:'Eliminare la struttura?', okLabel:'Elimina', danger:true})) return;
   try{
     localStorage.removeItem(typesKey(sid));
     localStorage.removeItem(payKey(sid));
@@ -2420,8 +2485,8 @@ window.removeStructure = async function(sid){
   render();
 };
 
-window.addDepartment = function(){
-  const name = prompt('Nome del reparto:');
+window.addDepartment = async function(){
+  const name = await appPrompt('Come si chiama il reparto?');
   if(!name || !name.trim()) return;
   const palette = ['#3E7C6B','#D98E3D','#B85450','#5C7FA6','#7A5C9E','#4A8C5F'];
   departments.push({id:'d'+Date.now(), name:name.trim(), color:palette[departments.length % palette.length]});
@@ -2434,10 +2499,10 @@ window.updateDepartment = function(idx, field, value){
   saveDepartments();
   renderPanelBody();
 };
-window.removeDepartment = function(idx){
+window.removeDepartment = async function(idx){
   const dp = departments[idx];
   if(!dp) return;
-  if(!confirm(`Eliminare il reparto "${dp.name}"? I turni gia' inseriti resteranno, ma senza reparto.`)) return;
+  if(!await appConfirm("I turni gia' inseriti resteranno, ma senza reparto.", {title:`Eliminare "${dp.name}"?`, okLabel:'Elimina', danger:true})) return;
   departments.splice(idx,1);
   saveDepartments();
   if(deptFilter===dp.id) deptFilter = null;
@@ -2463,10 +2528,10 @@ window.onVacationRateChange = async function(e){
 
 window.changeTaxPercent = async function(){
   const cur = (pay.taxPercent===null||pay.taxPercent===undefined) ? 18 : pay.taxPercent;
-  const v = prompt('Percentuale di tasse da sottrarre al totale lordo:', cur);
+  const v = await appPrompt('Percentuale di tasse da sottrarre al totale lordo:', cur);
   if(v===null) return;
   const n = Number(String(v).replace(',','.'));
-  if(isNaN(n) || n<0 || n>100){ alert('Inserisci un numero tra 0 e 100.'); return; }
+  if(isNaN(n) || n<0 || n>100){ await appAlert('Inserisci un numero tra 0 e 100.'); return; }
   pay.taxPercent = n;
   await saveSettings();
   renderPanelBody();
@@ -2638,6 +2703,62 @@ window.getTomorrowShifts = function(){
 
 
 
+
+// ==================== FINESTRE DI DIALOGO ====================
+// Sostituiscono alert/confirm/prompt del browser, che mostrano
+// l'indirizzo del sito e hanno un aspetto estraneo all'app.
+
+let dialogResolve = null;
+
+function closeDialog(value){
+  const el = document.getElementById('appDialog');
+  if(el) el.remove();
+  const r = dialogResolve;
+  dialogResolve = null;
+  if(r) r(value);
+}
+window.closeDialog = closeDialog;
+
+window.dialogConfirm = function(){
+  const inp = document.getElementById('dialogInput');
+  closeDialog(inp ? inp.value : true);
+};
+
+function showDialog({title, message, kind, defaultValue, okLabel, cancelLabel, danger}){
+  return new Promise(resolve=>{
+    dialogResolve = resolve;
+    const old = document.getElementById('appDialog');
+    if(old) old.remove();
+
+    const wrap = document.createElement('div');
+    wrap.id = 'appDialog';
+    wrap.className = 'dialog-overlay';
+    wrap.innerHTML = `
+      <div class="dialog-card">
+        ${title ? `<div class="dialog-title">${title}</div>` : ''}
+        <div class="dialog-msg">${message}</div>
+        ${kind==='prompt' ? `<input type="text" id="dialogInput" class="dialog-input" value="${(defaultValue??'').toString().replace(/"/g,'&quot;')}">` : ''}
+        <div class="dialog-actions">
+          ${kind==='alert' ? '' : `<button type="button" class="dialog-btn ghost" onclick="closeDialog(${kind==='prompt'?'null':'false'})">${cancelLabel||'Annulla'}</button>`}
+          <button type="button" class="dialog-btn ${danger?'danger':'primary'}" onclick="dialogConfirm()">${okLabel||'OK'}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(wrap);
+
+    const inp = document.getElementById('dialogInput');
+    if(inp){ inp.focus(); inp.select(); }
+
+    wrap.addEventListener('keydown', ev=>{
+      if(ev.key === 'Enter'){ ev.preventDefault(); window.dialogConfirm(); }
+      if(ev.key === 'Escape'){ closeDialog(kind==='prompt' ? null : false); }
+    });
+  });
+}
+
+const appAlert   = (message, title)        => showDialog({title: title||'', message, kind:'alert', okLabel:'Ho capito'});
+const appConfirm = (message, opts={})      => showDialog({title: opts.title||'', message, kind:'confirm', okLabel: opts.okLabel||'Conferma', danger: opts.danger});
+const appPrompt  = (message, defaultValue) => showDialog({message, kind:'prompt', defaultValue, okLabel:'Conferma'});
+
 // ==================== SINCRONIZZAZIONE TRA DISPOSITIVI ====================
 // I dati restano sul telefono come sempre; se c'e' un account online
 // vengono anche copiati su Supabase, cosi' si ritrovano su altri dispositivi.
@@ -2748,6 +2869,237 @@ async function fullSync(silent){
 
 window.manualSync = async function(){ await fullSync(false); };
 
+
+// ==================== RICHIESTE DI DISPONIBILITA' ====================
+
+let availRequests = [];
+let availUnsub = null;
+let isAdmin = false;
+let availFilter = 'pending';   // pending | all | mine
+
+const REASON_OPTIONS = [
+  'Motivi personali',
+  'Visita medica',
+  'Impegno familiare',
+  'Studio / esami',
+  'Secondo lavoro',
+  'Altro'
+];
+
+function stopAvailListener(){
+  if(availUnsub){
+    try{ window.SB.client.removeChannel(availUnsub); }catch(e){}
+    availUnsub = null;
+  }
+  availRequests = [];
+}
+
+async function fetchAvailRequests(){
+  if(!onlineReady()) return;
+  try{
+    const { data, error } = await window.SB.client
+      .from('availability_requests')
+      .select('*')
+      .eq('group_code', groupCode)
+      .order('date', {ascending:true});
+    if(error){ console.error(error); return; }
+    availRequests = data || [];
+    if(activePanel === 'avail') renderPanelBody();
+  }catch(e){ console.error(e); }
+}
+
+function startAvailListener(){
+  stopAvailListener();
+  if(!onlineReady()) return;
+  fetchAvailRequests();
+  try{
+    availUnsub = window.SB.client
+      .channel('avail-' + groupCode)
+      .on('postgres_changes',
+          {event:'*', schema:'public', table:'availability_requests', filter:`group_code=eq.${groupCode}`},
+          ()=>fetchAvailRequests())
+      .subscribe();
+  }catch(e){ console.error(e); }
+}
+
+// Legge dal profilo se l'utente e' admin del gruppo.
+async function loadRole(){
+  isAdmin = false;
+  if(!(window.SB && window.SB.enabled) || !authUser || !authUser.uid) return;
+  try{
+    const { data } = await window.SB.client
+      .from('profiles').select('role').eq('id', authUser.uid).single();
+    isAdmin = !!(data && data.role === 'admin');
+  }catch(e){}
+}
+
+window.createAvailRequest = async function(){
+  if(!onlineReady()){ await appAlert('Devi prima entrare in un gruppo.'); return; }
+  const dateStr = document.getElementById('availDate')?.value;
+  const kind    = document.getElementById('availKind')?.value;
+  const reason  = document.getElementById('availReason')?.value;
+  const note    = document.getElementById('availNote')?.value.trim();
+  if(!dateStr){ await appAlert('Scegli il giorno.'); return; }
+  onlineBusy = true; renderPanelBody();
+  try{
+    const { error } = await window.SB.client.from('availability_requests').insert({
+      group_code: groupCode,
+      from_uid: authUser.uid,
+      from_name: displayName,
+      date: dateStr,
+      kind, reason,
+      note: note || '',
+      status: 'pending'
+    });
+    if(error) await appAlert('Invio non riuscito: ' + error.message);
+  }catch(e){ await appAlert('Invio non riuscito: ' + e.message); }
+  onlineBusy = false;
+  await fetchAvailRequests();
+  renderPanelBody();
+};
+
+window.reviewAvailRequest = async function(id, decision){
+  if(!onlineReady() || !isAdmin) return;
+  const testo = decision === 'accepted'
+    ? 'La richiesta risultera\' accolta.'
+    : 'La richiesta risultera\' non accolta.';
+  if(!await appConfirm(testo, {title: decision==='accepted'?'Accogliere?':'Rifiutare?', okLabel:'Conferma', danger: decision!=='accepted'})) return;
+  try{
+    const { error } = await window.SB.client
+      .from('availability_requests').update({status: decision}).eq('id', id);
+    if(error) await appAlert('Operazione non riuscita: ' + error.message);
+  }catch(e){ await appAlert('Operazione non riuscita: ' + e.message); }
+  await fetchAvailRequests();
+  renderPanelBody();
+};
+
+window.withdrawAvailRequest = async function(id){
+  if(!onlineReady()) return;
+  if(!await appConfirm('La richiesta verra\' ritirata.', {title:'Ritirare la richiesta?', okLabel:'Ritira', danger:true})) return;
+  try{
+    const { error } = await window.SB.client.from('availability_requests').delete().eq('id', id);
+    if(error) await appAlert('Non riuscito: ' + error.message);
+  }catch(e){ await appAlert('Non riuscito: ' + e.message); }
+  await fetchAvailRequests();
+  renderPanelBody();
+};
+
+window.setAvailFilter = function(f){ availFilter = f; renderPanelBody(); };
+
+function statusLabel(s){
+  if(s === 'accepted') return '<span class="pill ok">accolta</span>';
+  if(s === 'declined') return '<span class="pill no">non accolta</span>';
+  return '<span class="pill wait">in attesa</span>';
+}
+
+function renderAvailCard(r, asAdmin){
+  const tipo = r.kind === 'non_disponibile'
+    ? '<span class="pill warn">non disponibile</span>'
+    : '<span class="pill good">preferirei lavorare</span>';
+  return `
+    <div class="swap-card ${r.status!=='pending'?'taken':''}">
+      <div class="swap-card-head">
+        <span class="swap-date">${fmtDateIt(r.date)}</span>
+        ${statusLabel(r.status)}
+      </div>
+      <div style="margin:4px 0 6px;">${tipo}</div>
+      ${asAdmin ? `<div class="swap-meta">${r.from_name || 'collega'}</div>` : ''}
+      <div class="swap-meta">${r.reason}</div>
+      ${r.note ? `<div class="swap-note">"${r.note}"</div>` : ''}
+      ${asAdmin && r.status==='pending' ? `
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button class="dialog-btn primary" style="padding:6px 13px;font-size:0.8rem;" onclick="reviewAvailRequest('${r.id}','accepted')">Accogli</button>
+          <button class="dialog-btn ghost" style="padding:6px 13px;font-size:0.8rem;" onclick="reviewAvailRequest('${r.id}','declined')">Rifiuta</button>
+        </div>` : ''}
+      ${!asAdmin && r.status==='pending' ? `
+        <button class="mini-btn danger" style="margin-top:6px;" onclick="withdrawAvailRequest('${r.id}')">ritira</button>` : ''}
+    </div>`;
+}
+
+function renderAvailPanel(){
+  if(!window.SB || !window.SB.enabled){
+    return `<h2>Disponibilita'</h2>
+      <p style="font-size:0.85rem;color:var(--ink-soft);">Serve la configurazione online.</p>`;
+  }
+  if(!authUser || !authUser.uid){
+    return `<h2>Disponibilita'</h2>
+      <p style="font-size:0.85rem;color:var(--ink-soft);">
+        Per inviare richieste devi accedere con un account. Esci e rientra con email e password.
+      </p>`;
+  }
+  if(!groupCode){
+    return `<h2>Disponibilita'</h2>
+      <p style="font-size:0.85rem;color:var(--ink-soft);">
+        Entra prima nel gruppo del tuo reparto dalla sezione Scambi.
+      </p>`;
+  }
+
+  // ---------- vista caposala ----------
+  if(isAdmin){
+    let lista = availRequests;
+    if(availFilter === 'pending') lista = lista.filter(r=>r.status==='pending');
+    const perData = {};
+    lista.forEach(r=>{ (perData[r.date] = perData[r.date] || []).push(r); });
+    const date = Object.keys(perData).sort();
+    const inAttesa = availRequests.filter(r=>r.status==='pending').length;
+
+    return `
+      <h2>Disponibilita' del reparto</h2>
+      <div class="special-row"><span>Richieste in attesa</span><span>${inAttesa}</span></div>
+
+      <div class="dept-filter" style="border:none;padding-top:10px;margin-top:4px;">
+        <button class="dept-chip ${availFilter==='pending'?'active':''}" onclick="setAvailFilter('pending')">Da valutare</button>
+        <button class="dept-chip ${availFilter==='all'?'active':''}" onclick="setAvailFilter('all')">Tutte</button>
+      </div>
+
+      ${date.length ? date.map(d=>`
+        <div class="section-label" style="margin:16px 0 8px;">${fmtDateIt(d)}</div>
+        ${perData[d].map(r=>renderAvailCard(r,true)).join('')}
+      `).join('') : `<div class="calendar-note" style="margin-top:14px;">nessuna richiesta</div>`}
+    `;
+  }
+
+  // ---------- vista lavoratore ----------
+  const mie = availRequests.filter(r=>r.from_uid === authUser.uid);
+  return `
+    <h2>Le mie disponibilita'</h2>
+    <p style="font-size:0.82rem;color:var(--ink-soft);margin-top:-6px;">
+      Segnala i giorni in cui preferiresti non lavorare, o in cui invece sei disponibile.
+      Chi prepara i turni le vedra' tutte insieme.
+    </p>
+
+    <div class="section-label">Nuova richiesta</div>
+    <div class="pay-row">
+      <label>Giorno<input type="date" id="availDate"></label>
+      <label>Tipo
+        <select id="availKind" class="mult-input">
+          <option value="non_disponibile">Preferirei NON lavorare</option>
+          <option value="preferisco">Preferirei lavorare</option>
+        </select>
+      </label>
+    </div>
+    <div class="pay-row">
+      <label>Motivo
+        <select id="availReason" class="mult-input">
+          ${REASON_OPTIONS.map(o=>`<option value="${o}">${o}</option>`).join('')}
+        </select>
+      </label>
+    </div>
+    <div class="pay-row">
+      <label>Nota facoltativa
+        <input type="text" id="availNote" placeholder="solo se vuoi aggiungere qualcosa">
+      </label>
+    </div>
+    <button class="btn-primary" onclick="createAvailRequest()" ${onlineBusy?'disabled':''}>
+      ${onlineBusy?'Invio...':'Invia richiesta'}
+    </button>
+
+    <div class="section-label">Richieste inviate</div>
+    ${mie.length ? mie.map(r=>renderAvailCard(r,false)).join('')
+                 : `<div class="calendar-note">non hai richieste attive</div>`}
+  `;
+}
+
 // ==================== SCAMBIO TURNI (online) ====================
 
 function loadGroup(){
@@ -2778,6 +3130,7 @@ async function syncProfile(){
 }
 
 function stopRequestsListener(){
+  stopAvailListener();
   if(requestsUnsub){
     try{ window.SB.client.removeChannel(requestsUnsub); }catch(e){}
     requestsUnsub = null;
@@ -2803,6 +3156,7 @@ function startRequestsListener(){
   stopRequestsListener();
   if(!onlineReady()) return;
   fetchRequests();
+  loadRole().then(()=>{ startAvailListener(); if(activePanel) renderPanelBody(); });
   try{
     requestsUnsub = window.SB.client
       .channel('swap-' + groupCode)
@@ -2814,9 +3168,9 @@ function startRequestsListener(){
 }
 
 window.joinGroup = async function(){
-  const code = prompt('Codice del gruppo di lavoro (chiedilo a un collega, oppure inventane uno nuovo per crearlo):');
+  const code = await appPrompt('Codice del gruppo di lavoro. Chiedilo a un collega, oppure inventane uno nuovo per crearlo.');
   if(!code || !code.trim()) return;
-  const name = prompt('Come vuoi farti chiamare dai colleghi?', displayName || (authUser?authUser.email.split('@')[0]:''));
+  const name = await appPrompt('Come vuoi farti chiamare dai colleghi?', displayName || (authUser?authUser.email.split('@')[0]:''));
   if(!name || !name.trim()) return;
   groupCode = code.trim().toLowerCase();
   displayName = name.trim();
@@ -2827,7 +3181,7 @@ window.joinGroup = async function(){
 };
 
 window.leaveGroup = async function(){
-  if(!confirm('Uscire dal gruppo? Le tue richieste gia inviate restano visibili ai colleghi.')) return;
+  if(!await appConfirm("Le tue richieste gia' inviate restano visibili ai colleghi.", {title:'Uscire dal gruppo?', okLabel:'Esci'})) return;
   stopRequestsListener();
   groupCode = null;
   saveGroup();
@@ -2836,12 +3190,12 @@ window.leaveGroup = async function(){
 };
 
 window.createSwapRequest = async function(){
-  if(!onlineReady()){ alert('Devi prima entrare in un gruppo.'); return; }
+  if(!onlineReady()){ await appAlert('Devi prima entrare in un gruppo.'); return; }
   const dateStr = document.getElementById('swapDate')?.value;
   const shift = document.getElementById('swapShift')?.value.trim();
   const note = document.getElementById('swapNote')?.value.trim();
-  if(!dateStr){ alert('Scegli il giorno del turno.'); return; }
-  if(!shift){ alert('Indica quale turno (es. P, M, N).'); return; }
+  if(!dateStr){ await appAlert('Scegli il giorno del turno.'); return; }
+  if(!shift){ await appAlert('Indica quale turno (es. P, M, N).'); return; }
   onlineBusy = true; renderPanelBody();
   try{
     const { error } = await window.SB.client.from('swap_requests').insert({
@@ -2853,8 +3207,8 @@ window.createSwapRequest = async function(){
       note: note || '',
       status: 'open'
     });
-    if(error) alert('Invio non riuscito: ' + error.message);
-  }catch(e){ alert('Invio non riuscito: ' + e.message); }
+    if(error) await appAlert('Invio non riuscito: ' + error.message);
+  }catch(e){ await appAlert('Invio non riuscito: ' + e.message); }
   onlineBusy = false;
   await fetchRequests();
   renderPanelBody();
@@ -2862,7 +3216,7 @@ window.createSwapRequest = async function(){
 
 window.acceptSwapRequest = async function(id){
   if(!onlineReady()) return;
-  if(!confirm('Confermi di prenderti questo turno?')) return;
+  if(!await appConfirm("Il collega vedra' che te ne sei preso carico.", {title:'Prendere questo turno?', okLabel:'Lo prendo io'})) return;
   onlineBusy = true; renderPanelBody();
   try{
     const { error } = await window.SB.client
@@ -2870,8 +3224,8 @@ window.acceptSwapRequest = async function(id){
       .update({status:'taken', taken_by: authUser.uid, taken_by_name: displayName})
       .eq('id', id)
       .eq('status', 'open');           // non si puo' prendere due volte
-    if(error) alert('Operazione non riuscita: ' + error.message);
-  }catch(e){ alert('Operazione non riuscita: ' + e.message); }
+    if(error) await appAlert('Operazione non riuscita: ' + error.message);
+  }catch(e){ await appAlert('Operazione non riuscita: ' + e.message); }
   onlineBusy = false;
   await fetchRequests();
   renderPanelBody();
@@ -2879,11 +3233,11 @@ window.acceptSwapRequest = async function(id){
 
 window.cancelSwapRequest = async function(id){
   if(!onlineReady()) return;
-  if(!confirm('Eliminare questa richiesta?')) return;
+  if(!await appConfirm("La richiesta sparira' anche ai colleghi.", {title:'Eliminare la richiesta?', okLabel:'Elimina', danger:true})) return;
   try{
     const { error } = await window.SB.client.from('swap_requests').delete().eq('id', id);
-    if(error) alert('Eliminazione non riuscita: ' + error.message);
-  }catch(e){ alert('Eliminazione non riuscita: ' + e.message); }
+    if(error) await appAlert('Eliminazione non riuscita: ' + error.message);
+  }catch(e){ await appAlert('Eliminazione non riuscita: ' + e.message); }
   await fetchRequests();
   renderPanelBody();
 };
