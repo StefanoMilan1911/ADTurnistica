@@ -2005,7 +2005,7 @@ function renderSettingsPanel(){
       </div>`}
 
     <div class="section-label">Strutture</div>
-    <div class="calendar-note" style="margin:-4px 0 10px;">gni struttura ha turni, reparti e impostazioni propri</div>
+    <div class="calendar-note" style="margin:-4px 0 10px;">Ogni struttura ha turni, reparti e impostazioni propri</div>
     ${structures.map(s=>`
       <div class="struct-row">
         <span class="struct-name">${s.name}${s.id===activeStructureId?' <em>(attiva)</em>':''}</span>
@@ -2064,12 +2064,17 @@ function renderSettingsPanel(){
     <button class="add-type" onclick="addType()">+ Aggiungi tipo di turno</button>
 
     ${syncReady() ? `
-    <button class="mini-btn danger" style="margin-top:10px;" onclick="resetLocalData()">
-      Svuota i dati di questo telefono
+    <button class="mini-btn" style="margin-top:10px;" onclick="resetLocalData()">
+      Svuota questo telefono
+    </button>
+    <div class="calendar-note" style="margin:4px 0 10px;">
+      cancella i dati dal dispositivo e riscarica quelli del tuo account
+    </div>
+    <button class="mini-btn danger" onclick="resetEverything()">
+      Cancella tutto (telefono + account)
     </button>
     <div class="calendar-note" style="margin-top:4px;">
-      cancella turni e impostazioni da questo dispositivo e riscarica
-      quelli del tuo account
+      si riparte da zero: non resta nulla da nessuna parte
     </div>` : ''}
 
     <div class="section-label">Backup dati</div>
@@ -2895,6 +2900,29 @@ async function fullSync(silent){
 }
 
 window.manualSync = async function(){ await fullSync(false); };
+
+// Cancella i dati SIA dal telefono SIA dall'account: si riparte davvero da zero.
+window.resetEverything = async function(){
+  if(!syncReady()){ await appAlert('Serve essere collegati a un account.'); return; }
+  if(!await appConfirm(
+      "Verranno cancellati tutti i turni e le impostazioni, sia da questo telefono sia dal tuo account online.\n\n" +
+      "L'operazione non si puo' annullare.",
+      {title:'Cancellare tutto?', okLabel:'Cancella tutto', danger:true})) return;
+
+  // prima il cloud, altrimenti la sincronizzazione lo ricaricherebbe
+  try{
+    const { error } = await window.SB.client
+      .from('user_data').delete().eq('user_id', authUser.uid);
+    if(error){ await appAlert('Non riuscito: ' + error.message); return; }
+  }catch(e){ await appAlert('Non riuscito: ' + e.message); return; }
+
+  clearAccountScopedData();
+  loadStructures(); loadCustomColors();
+  await loadSettings(); await loadMonth(viewY, viewM);
+  await loadProfileFromCloud();
+  syncState = 'ok'; syncMsg = 'tutto cancellato';
+  render();
+};
 
 window.resetLocalData = async function(){
   if(!await appConfirm(
