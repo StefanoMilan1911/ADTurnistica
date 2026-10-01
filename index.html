@@ -2005,7 +2005,7 @@ function renderSettingsPanel(){
       </div>`}
 
     <div class="section-label">Strutture</div>
-    <div class="calendar-note" style="margin:-4px 0 10px;">Ogni struttura ha turni, reparti e impostazioni propri</div>
+    <div class="calendar-note" style="margin:-4px 0 10px;">gni struttura ha turni, reparti e impostazioni propri</div>
     ${structures.map(s=>`
       <div class="struct-row">
         <span class="struct-name">${s.name}${s.id===activeStructureId?' <em>(attiva)</em>':''}</span>
@@ -2062,6 +2062,15 @@ function renderSettingsPanel(){
         </div>`).join('')}
     </div>
     <button class="add-type" onclick="addType()">+ Aggiungi tipo di turno</button>
+
+    ${syncReady() ? `
+    <button class="mini-btn danger" style="margin-top:10px;" onclick="resetLocalData()">
+      Svuota i dati di questo telefono
+    </button>
+    <div class="calendar-note" style="margin-top:4px;">
+      cancella turni e impostazioni da questo dispositivo e riscarica
+      quelli del tuo account
+    </div>` : ''}
 
     <div class="section-label">Backup dati</div>
     <div class="pay-row">
@@ -2887,6 +2896,20 @@ async function fullSync(silent){
 
 window.manualSync = async function(){ await fullSync(false); };
 
+window.resetLocalData = async function(){
+  if(!await appConfirm(
+      "Verranno cancellati turni e impostazioni salvati su QUESTO telefono.\n\n" +
+      "Subito dopo l'app riscarichera' quelli del tuo account.",
+      {title:'Svuotare questo dispositivo?', okLabel:'Svuota', danger:true})) return;
+  clearAccountScopedData();
+  loadStructures(); loadCustomColors();
+  await loadSettings(); await loadMonth(viewY, viewM);
+  await loadProfileFromCloud();
+  render();
+  await fullSync(true);
+  render();
+};
+
 
 
 // ==================== CAMBIO ACCOUNT ====================
@@ -2924,16 +2947,57 @@ function clearAccountScopedData(){
 //  - nessuno prima    -> i dati locali diventano suoi (caso tipico del
 //                        primo accesso di chi usava l'app senza account)
 //  - diverso          -> si svuota, poi si scarica il suo dal cloud
+function hasLocalData(){
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('month:')) return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+async function cloudHasData(uid){
+  if(!(window.SB && window.SB.enabled)) return false;
+  try{
+    const { data } = await window.SB.client
+      .from('user_data').select('key').eq('user_id', uid).limit(1);
+    return !!(data && data.length);
+  }catch(e){ return false; }
+}
+
 async function handleAccountSwitch(uid){
   let last = null;
   try{ last = localStorage.getItem(STORAGE_LASTUID_KEY); }catch(e){}
+
+  // stesso account dell'ultima volta: niente da fare
   if(last === uid) return false;
 
-  const switched = !!last && last !== uid;
-  if(switched) clearAccountScopedData();
+  // account diverso da quello di prima: i dati sul telefono non sono suoi
+  if(last && last !== uid){
+    clearAccountScopedData();
+    try{ localStorage.setItem(STORAGE_LASTUID_KEY, uid); }catch(e){}
+    return true;
+  }
+
+  // primo accesso su questo telefono. Se ci sono turni salvati localmente
+  // non possiamo sapere di chi siano: lo chiediamo.
+  if(hasLocalData() && !await cloudHasData(uid)){
+    const tieni = await appConfirm(
+      "Su questo telefono ci sono turni non ancora collegati a nessun account.\n\n" +
+      "Sono tuoi? Verranno salvati sul tuo account.\n" +
+      "Se invece sono di un'altra persona, scegli \"Riparti da zero\".",
+      {title:'Dati gia\' presenti', okLabel:'Sono miei', cancelLabel:'Riparti da zero'}
+    );
+    if(!tieni){
+      clearAccountScopedData();
+      try{ localStorage.setItem(STORAGE_LASTUID_KEY, uid); }catch(e){}
+      return true;
+    }
+  }
 
   try{ localStorage.setItem(STORAGE_LASTUID_KEY, uid); }catch(e){}
-  return switched;
+  return false;
 }
 
 // Gruppo, nome e ruolo vengono dal profilo online, non dal telefono.
