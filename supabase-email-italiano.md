@@ -191,3 +191,11 @@ Mandando da un `@gmail.com` capita. Rimedi, in ordine di fatica:
 ## Limiti di Gmail
 Circa 500 email al giorno. Per un gruppo di 15 persone è abbondante:
 le mail partono solo a registrazione o recupero password, non ogni giorno.
+
+Tre cose importanti da sapere:
+
+I dati restano privati. Le regole SQL permettono a ciascuno di vedere solo le proprie righe — nemmeno i colleghi dello stesso gruppo possono leggere turni o guadagni altrui.
+
+In caso di conflitto vince la modifica più recente. Se modifica lo stesso mese su due dispositivi mentre uno è offline, quando si risincronizzano sopravvive l'ultima scritta e l'altra si perde. Per un uso normale (un dispositivo alla volta) non capita.
+
+Chi entra senza account resta come prima: tutto locale, solo backup manuale. Il messaggio nelle impostazioni glielo ricorda.
