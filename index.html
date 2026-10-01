@@ -1985,7 +1985,8 @@ function renderSettingsPanel(){
     <h2>Impostazioni</h2>
 
     <div class="section-label">Account</div>
-    <div style="margin-bottom:10px;"><div class="section-label" style="margin:0 0 2px;">Utente</div><div style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;word-break:break-all;">${authUser?authUser.email:'—'}</div></div>    <button class="icon-btn" onclick="logout()" type="button" style="margin:8px 0 4px;">🚪 Esci</button>    
+    <div style="margin-bottom:10px;"><div class="section-label" style="margin:0 0 2px;">Utente</div><div style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;word-break:break-all;">${authUser?authUser.email:'—'}</div></div>    <button class="icon-btn" onclick="logout()" type="button" style="margin:8px 0 4px;">🚪 Esci</button>
+
     <div class="section-label">Sincronizzazione</div>
     ${syncReady() ? `
       <div class="calendar-note" style="margin:-4px 0 8px;">
@@ -2136,11 +2137,23 @@ window.onLoginSubmit = async function(e){
     authUser = {email};
   }
   try{ localStorage.setItem(STORAGE_AUTH_KEY, JSON.stringify(authUser)); }catch(err){}
-  loadGroup();
-  await syncProfile();
+
+  if(authUser.uid){
+    const switched = await handleAccountSwitch(authUser.uid);
+    await loadProfileFromCloud();
+    if(switched){
+      // account diverso: si riparte dai suoi dati, scaricati dal cloud
+      loadStructures(); loadCustomColors();
+      await loadSettings(); await loadMonth(viewY, viewM);
+    }
+  } else {
+    loadGroup();
+  }
+
   render();
   startRequestsListener();
-  fullSync(true);
+  await fullSync(true);
+  render();
 };
 window.sendPasswordReset = async function(){
   const errBox = document.getElementById('loginError');
@@ -2208,6 +2221,12 @@ window.localOnlyLogin = function(){
 };
 
 window.logout = async function(){
+  const sincronizzato = syncReady();
+  const msg = sincronizzato
+    ? "I tuoi dati restano salvati sul tuo account: rientrando li ritrovi."
+    : "ATTENZIONE: non hai un account online, quindi i turni di questo telefono NON sono salvati da nessuna parte. Se esci e un'altra persona accede, verranno cancellati.\n\nFai prima un backup dalle impostazioni.";
+  if(!await appConfirm(msg, {title:'Uscire dall\'account?', okLabel:'Esci', danger: !sincronizzato})) return;
+
   stopRequestsListener();
   if(window.SB && window.SB.enabled){
     try{ await window.SB.client.auth.signOut(); }catch(e){}
@@ -2869,6 +2888,74 @@ async function fullSync(silent){
 window.manualSync = async function(){ await fullSync(false); };
 
 
+
+// ==================== CAMBIO ACCOUNT ====================
+// I dati stanno nel telefono, quindi entrando con un altro account
+// si vedrebbero i turni del precedente. Qui ripuliamo quando serve.
+
+const STORAGE_LASTUID_KEY = 'last-uid';
+
+function clearAccountScopedData(){
+  try{
+    const toRemove = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(!k) continue;
+      if(isSyncedKey(k) || k === SYNC_META_KEY || k === STORAGE_GROUP_KEY) toRemove.push(k);
+    }
+    toRemove.forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
+  // riporta la memoria dell'app allo stato iniziale
+  structures = [];
+  activeStructureId = null;
+  departments = [];
+  deptFilter = null;
+  types = JSON.parse(JSON.stringify(DEFAULT_TYPES));
+  pay = defaultPay();
+  customColors = [];
+  groupCode = null;
+  displayName = '';
+  isAdmin = false;
+  monthData = {shifts:{}, net:null, extra:{}, overtimeThreshold:null, taxes:null};
+}
+
+// Decide cosa fare quando entra un account:
+//  - stesso di prima  -> non si tocca niente
+//  - nessuno prima    -> i dati locali diventano suoi (caso tipico del
+//                        primo accesso di chi usava l'app senza account)
+//  - diverso          -> si svuota, poi si scarica il suo dal cloud
+async function handleAccountSwitch(uid){
+  let last = null;
+  try{ last = localStorage.getItem(STORAGE_LASTUID_KEY); }catch(e){}
+  if(last === uid) return false;
+
+  const switched = !!last && last !== uid;
+  if(switched) clearAccountScopedData();
+
+  try{ localStorage.setItem(STORAGE_LASTUID_KEY, uid); }catch(e){}
+  return switched;
+}
+
+// Gruppo, nome e ruolo vengono dal profilo online, non dal telefono.
+async function loadProfileFromCloud(){
+  if(!(window.SB && window.SB.enabled) || !authUser || !authUser.uid) return;
+  try{
+    const { data } = await window.SB.client
+      .from('profiles').select('display_name, group_code, role')
+      .eq('id', authUser.uid).maybeSingle();
+    if(data){
+      groupCode = data.group_code || null;
+      displayName = data.display_name || '';
+      isAdmin = data.role === 'admin';
+      saveGroup();
+    } else {
+      // profilo non ancora creato: niente gruppo finche' non ne sceglie uno
+      groupCode = null; displayName = ''; isAdmin = false;
+      saveGroup();
+    }
+  }catch(e){}
+}
+
 // ==================== RICHIESTE DI DISPONIBILITA' ====================
 
 let availRequests = [];
@@ -3175,6 +3262,7 @@ window.joinGroup = async function(){
   displayName = name.trim();
   saveGroup();
   await syncProfile();
+  await loadRole();
   startRequestsListener();
   renderPanelBody();
 };
@@ -3338,6 +3426,12 @@ function renderSwapPanel(){
       if(data && data.session){
         authUser = {email: data.session.user.email, uid: data.session.user.id};
         try{ localStorage.setItem(STORAGE_AUTH_KEY, JSON.stringify(authUser)); }catch(e){}
+        const switched = await handleAccountSwitch(authUser.uid);
+        await loadProfileFromCloud();
+        if(switched){
+          loadStructures(); loadCustomColors();
+          await loadSettings(); await loadMonth(viewY, viewM);
+        }
       } else if(authUser){
         // nessuna sessione online: si resta dentro in locale, senza scambi
         authUser = {email: authUser.email};
